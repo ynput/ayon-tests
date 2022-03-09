@@ -129,8 +129,8 @@ class TestEntities:
 
         assert state_row["representationId"] == representation_id
         assert state_row["size"] == self.file_size
-        assert state_row["localStatus"] == -1
-        assert state_row["remoteStatus"] == -1
+        assert state_row["localStatus"]["status"] == -1
+        assert state_row["remoteStatus"]["status"] == -1
         assert state_row["files"] is None
 
         response = api.post(
@@ -152,7 +152,7 @@ class TestEntities:
         )
         assert response
         state_row = response["representations"][0]
-        assert state_row["localStatus"] == 0
+        assert state_row["localStatus"]["status"] == 0
 
         response = api.get(
             f"projects/{self.project_name}/sitesync/state",
