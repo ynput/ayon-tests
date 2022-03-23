@@ -2,6 +2,7 @@ import json
 import simplejson  # just because of the exceptions
 import requests
 
+from typing import Any, Dict
 from nxtools import logging
 
 from .responses import RestResponse, GraphQLResponse
@@ -43,12 +44,12 @@ class API:
         data = response.json()
         return cls(server_url, data.get("token", "NotAuthorizedToken"))
 
-    def logout(self):
+    def logout(self) -> RestResponse:
         if not self.access_token:
             return
         return self.post("auth/logout")
 
-    def gql(self, query, **kwargs):
+    def gql(self, query: str, **kwargs: Dict[str, Any]) -> GraphQLResponse:
         """Execute a GraphQL query."""
         payload = {
             "query": query,
@@ -60,7 +61,7 @@ class API:
         )
         return GraphQLResponse(**response.json())
 
-    def _request(self, function: callable, url: str, **kwargs):
+    def _request(self, function: callable, url: str, **kwargs) -> RestResponse:
         """Do an authenticated HTTP request.
 
         This private method is used by get/post/put/patch/delete

@@ -10,6 +10,7 @@ pytest = "^7.0.1"
 requests = "^2.27.1"
 nxtools = "^1.6"
 simplejson = "^3.17.6"
+pytest-order = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,6 +1,8 @@
 import json
 import http
 
+from typing import Any
+
 
 class RestResponse:
     """REST API Response."""
@@ -8,9 +10,11 @@ class RestResponse:
     def __init__(self, status: int = 200, **data):
         self.status = status
         self.data = data
+        # We should never get server error
+        assert status < 500, data.get("detail", "Internal server error")
 
     @property
-    def detail(self):
+    def detail(self) -> str:
         return self.get(
             "detail",
             http.HTTPStatus(self.status).description
@@ -19,13 +23,13 @@ class RestResponse:
     def __repr__(self) -> str:
         return f"<RestResponse: {self.status} ({self.detail})>"
 
-    def __len__(self):
+    def __bool__(self) -> bool:
         return 200 <= self.status < 400
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         return self.data[key]
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         return self.data.get(key, default)
 
     def print(self):
@@ -35,7 +39,7 @@ class RestResponse:
 class GraphQLResponse:
     """GraphQLResponse"""
 
-    def __init__(self, **response):
+    def __init__(self, **response) -> None:
         if "code" in response:
             # got rest response instead of gql (maybe unauthorized)
             self.data = {}
@@ -44,15 +48,15 @@ class GraphQLResponse:
             self.data = response.get("data", {})
             self.errors = response.get("errors", [])
 
-    def __len__(self):
-        return not bool(self.errors)
+    def __bool__(self) -> bool:
+        return not self.errors
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.errors:
             msg = f"errors=\"{self.errors[0]['message']}\""
         else:
             msg = "status=\"OK\">"
         return f"<GraphQLResponse: {msg}>"
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self.data[key]
