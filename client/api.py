@@ -11,20 +11,17 @@ from .responses import RestResponse, GraphQLResponse
 class API:
     """OpenPype API client"""
 
-    def __init__(
-        self,
-        server_url: str,
-        access_token: str,
-        debug: bool = False
-    ):
+    def __init__(self, server_url: str, access_token: str, debug: bool = False):
         self.server_url = server_url.rstrip("/")
         self.access_token = access_token
         self.debug = debug
         self.session = requests.Session()
-        self.session.headers.update({
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.access_token}"
-        })
+        self.session.headers.update(
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.access_token}",
+            }
+        )
 
     @classmethod
     def login(
@@ -32,14 +29,10 @@ class API:
         name: str,
         password: str,
         server_url: str = "http://localhost:5000",
-    ) -> 'API':
+    ) -> "API":
         server_url = server_url.rstrip("/")
         response = requests.post(
-            server_url + "/api/auth/login",
-            json={
-                "name": name,
-                "password": password
-            }
+            server_url + "/api/auth/login", json={"name": name, "password": password}
         )
         data = response.json()
         return cls(server_url, data.get("token", "NotAuthorizedToken"))
@@ -51,14 +44,8 @@ class API:
 
     def gql(self, query: str, **kwargs: Dict[str, Any]) -> GraphQLResponse:
         """Execute a GraphQL query."""
-        payload = {
-            "query": query,
-            "variables": kwargs
-        }
-        response = self.session.post(
-            self.server_url + "/graphql",
-            json=payload
-        )
+        payload = {"query": query, "variables": kwargs}
+        response = self.session.post(self.server_url + "/graphql", json=payload)
         return GraphQLResponse(**response.json())
 
     def _request(self, function: callable, url: str, **kwargs) -> RestResponse:
@@ -70,13 +57,11 @@ class API:
             response = function(url, **kwargs)
         except ConnectionRefusedError:
             response = RestResponse(
-                500,
-                detail="Unable to connect the server. Connection refused"
+                500, detail="Unable to connect the server. Connection refused"
             )
         except requests.exceptions.ConnectionError:
             response = RestResponse(
-                500,
-                detail="Unable to connect the server. Connection error"
+                500, detail="Unable to connect the server. Connection error"
             )
         else:
             if response.text == "":
@@ -85,14 +70,10 @@ class API:
             else:
                 try:
                     data = response.json()
-                except (
-                    json.JSONDecodeError,
-                    simplejson.errors.JSONDecodeError
-                ):
+                except (json.JSONDecodeError, simplejson.errors.JSONDecodeError):
                     logging.error(response.text)
                     response = RestResponse(
-                        500,
-                        detail=f"The response is not a JSON: {response.text}"
+                        500, detail=f"The response is not a JSON: {response.text}"
                     )
                 else:
                     response = RestResponse(response.status_code, **data)
@@ -102,6 +83,20 @@ class API:
             else:
                 logging.error(response)
         return response
+
+    def raw_post(self, endpoint: str, mime: str, data: bytes) -> RestResponse:
+        endpoint = endpoint.strip("/")
+        url = f"{self.server_url}/api/{endpoint}"
+        return self._request(
+            self.session.post, url, data=data, headers={"Content-Type": mime}
+        )
+
+    def raw_get(self, endpoint: str, **kwargs) -> RestResponse:
+        endpoint = endpoint.strip("/")
+        url = f"{self.server_url}/api/{endpoint}"
+        print(url)
+        response = self.session.get(url, params=kwargs)
+        return response.content
 
     def get(self, endpoint: str, **kwargs) -> RestResponse:
         endpoint = endpoint.strip("/")

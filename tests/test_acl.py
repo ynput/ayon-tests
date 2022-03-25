@@ -26,15 +26,19 @@ def admin():
         task_types={"foo": {}}
     )
     assert response.status == 201
+
     yield api
 
     # Try to delete project. It should return 404
     # as it should be already deleted by the manager
+    response = api.delete(f"/users/test_user")
     response = api.delete(f"/projects/{PROJECT_NAME}")
     api.logout()
 
 
 def test_folder_access(admin):
+
+    response = admin.put(f"/users/test_user")
 
     attr = {
         "resolutionWidth": 1920,
@@ -99,6 +103,5 @@ def test_project_delete(admin):
 
     # Now as a manager, who should be able to do that
 
-    api = API.login("manager", "manager")
-    response = api.delete(f"/projects/{PROJECT_NAME}")
+    response = admin.delete(f"/projects/{PROJECT_NAME}")
     assert response.status == 204
