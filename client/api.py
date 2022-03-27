@@ -23,6 +23,9 @@ class API:
             }
         )
 
+    def __bool__(self):
+        return not not self.access_token
+
     @classmethod
     def login(
         cls,
@@ -35,7 +38,7 @@ class API:
             server_url + "/api/auth/login", json={"name": name, "password": password}
         )
         data = response.json()
-        return cls(server_url, data.get("token", "NotAuthorizedToken"))
+        return cls(server_url, data.get("token", ""))
 
     def logout(self) -> RestResponse:
         if not self.access_token:
