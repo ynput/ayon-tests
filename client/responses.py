@@ -15,10 +15,7 @@ class RestResponse:
 
     @property
     def detail(self) -> str:
-        return self.get(
-            "detail",
-            http.HTTPStatus(self.status).description
-        )
+        return self.get("detail", http.HTTPStatus(self.status).description)
 
     def __repr__(self) -> str:
         return f"<RestResponse: {self.status} ({self.detail})>"
@@ -55,7 +52,7 @@ class GraphQLResponse:
         if self.errors:
             msg = f"errors=\"{self.errors[0]['message']}\""
         else:
-            msg = "status=\"OK\">"
+            msg = 'status="OK">'
         return f"<GraphQLResponse: {msg}>"
 
     def __getitem__(self, key: str) -> Any:

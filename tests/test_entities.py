@@ -15,8 +15,7 @@ class TestEntities:
         response = api.delete(f"/projects/{self.project_name}")
 
         response = api.put(
-            f"/projects/{self.project_name}",
-            folder_types={"AssetBuild": {}}
+            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
         )
         assert response.status == 201
 
@@ -31,7 +30,7 @@ class TestEntities:
         response = api.post(
             f"projects/{self.project_name}/folders",
             name="test_folder",
-            folderType="AssetBuild"
+            folderType="AssetBuild",
         )
         assert response
         folder_id = response.data["id"]
@@ -45,7 +44,7 @@ class TestEntities:
             f"projects/{self.project_name}/subsets",
             folderId=folder_id,
             name="test_subset",
-            family="TheSimpsons"
+            family="TheSimpsons",
         )
         assert response
         subset_id = response.data["id"]
@@ -72,14 +71,14 @@ class TestEntities:
             self.file_hash: {
                 "hash": self.file_hash,
                 "path": "/some/path",
-                "size": self.file_size
+                "size": self.file_size,
             }
         }
         response = api.post(
             f"projects/{self.project_name}/representations",
             versionId=version_id,
             name=self.representation_name,
-            data={"files": files}
+            data={"files": files},
         )
         assert response
         version_id = response.data["id"]
@@ -87,15 +86,13 @@ class TestEntities:
 
     def test_folder(self, api, folder_id):
         response = api.patch(
-            f"projects/{self.project_name}/folders/{folder_id}",
-            name="foobar"
+            f"projects/{self.project_name}/folders/{folder_id}", name="foobar"
         )
         assert response
 
     def test_subset(self, api, subset_id):
         response = api.patch(
-            f"projects/{self.project_name}/subsets/{subset_id}",
-            family="Sopranos"
+            f"projects/{self.project_name}/subsets/{subset_id}", family="Sopranos"
         )
         assert response
 
@@ -121,7 +118,7 @@ class TestEntities:
         response = api.get(
             f"projects/{self.project_name}/sitesync/state",
             localSite="local",
-            remoteSite="remote"
+            remoteSite="remote",
         )
         assert response
         assert len(response["representations"]) == 1
@@ -135,11 +132,7 @@ class TestEntities:
 
         response = api.post(
             f"projects/{self.project_name}/sitesync/state/{representation_id}/local",
-            files=[{
-                "fileHash": self.file_hash,
-                "size": 5,
-                "status": 0  # in progress
-            }]
+            files=[{"fileHash": self.file_hash, "size": 5, "status": 0}],  # in progress
         )
         assert response
 
@@ -148,7 +141,7 @@ class TestEntities:
         response = api.get(
             f"projects/{self.project_name}/sitesync/state",
             localSite="local",
-            remoteSite="remote"
+            remoteSite="remote",
         )
         assert response
         state_row = response["representations"][0]
@@ -158,7 +151,7 @@ class TestEntities:
             f"projects/{self.project_name}/sitesync/state",
             localSite="local",
             remoteSite="remote",
-            representationId=representation_id
+            representationId=representation_id,
         )
         assert response
         assert len(response["representations"]) == 1

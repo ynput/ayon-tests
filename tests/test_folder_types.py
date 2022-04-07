@@ -9,10 +9,10 @@ class TestFolderTypes:
     @pytest.fixture(scope="class")
     def api(self):
         api = API.login("admin", "admin")
+        response = api.delete(f"/projects/{self.project_name}")
 
         response = api.put(
-            f"/projects/{self.project_name}",
-            folder_types={"AssetBuild": {}}
+            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
         )
         assert response.status == 201
 
@@ -36,7 +36,7 @@ class TestFolderTypes:
         response = api.post(
             f"projects/{self.project_name}/folders",
             name="test_folder",
-            folderType="AssetBuild"
+            folderType="AssetBuild",
         )
         assert response
 
@@ -44,9 +44,7 @@ class TestFolderTypes:
         folder_id = response["id"]
 
         # Ensure that the folder is there and has the correct type
-        response = api.get(
-            f"projects/{self.project_name}/folders/{folder_id}"
-        )
+        response = api.get(f"projects/{self.project_name}/folders/{folder_id}")
         assert response
         assert response["folderType"] == "AssetBuild"
 
@@ -57,15 +55,13 @@ class TestFolderTypes:
 
         response = api.patch(
             f"projects/{self.project_name}",
-            folder_types={"AssetBuild": {"name": "Asset"}}
+            folder_types={"AssetBuild": {"name": "Asset"}},
         )
         assert response
 
         # Check if folder_typoe was changed on the folder too
 
-        response = api.get(
-            f"projects/{self.project_name}/folders/{folder_id}"
-        )
+        response = api.get(f"projects/{self.project_name}/folders/{folder_id}")
         assert response
         assert response["folderType"] == "Asset"
 
@@ -73,10 +69,7 @@ class TestFolderTypes:
 
         response = api.patch(
             f"projects/{self.project_name}",
-            folderTypes={
-                "Sequence": {"icon": "sequence"},
-                "Shot": {"icon": "shot"}
-            }
+            folderTypes={"Sequence": {"icon": "sequence"}, "Shot": {"icon": "shot"}},
         )
         assert response
 
@@ -97,8 +90,7 @@ class TestFolderTypes:
         # Delete a folder type by setting its data field to None
 
         response = api.patch(
-            f"projects/{self.project_name}",
-            folderTypes={"Sequence": None}
+            f"projects/{self.project_name}", folderTypes={"Sequence": None}
         )
         assert response
 
@@ -114,8 +106,7 @@ class TestFolderTypes:
         # Update folder_type data
 
         response = api.patch(
-            f"projects/{self.project_name}",
-            folderTypes={"Shot": {"icon": "shot2"}}
+            f"projects/{self.project_name}", folderTypes={"Shot": {"icon": "shot2"}}
         )
         assert response
 

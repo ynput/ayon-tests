@@ -3,13 +3,13 @@ import pytest
 from client.api import API
 
 PROJECT_NAME = "test_acl"
+USER_NAME = "test_artist"
+PASSWORD = "123.456.AbCd"
+ROLE_NAME = "test_artist_role"
 
 
 def create_entity(api, entity_type: str, **kwargs):
-    response = api.post(
-        f"projects/{PROJECT_NAME}/{entity_type}s",
-        **kwargs
-    )
+    response = api.post(f"projects/{PROJECT_NAME}/{entity_type}s", **kwargs)
     assert response
     return response.data["id"]
 
@@ -18,12 +18,15 @@ def create_entity(api, entity_type: str, **kwargs):
 def admin():
     api = API.login("admin", "admin")
 
+    api.delete(f"/users/{USER_NAME}")
+    api.delete(f"/projects/{PROJECT_NAME}")
+
     # Create a testing project
 
     response = api.put(
         f"/projects/{PROJECT_NAME}",
         folder_types={"AssetBuild": {}},
-        task_types={"foo": {}}
+        task_types={"foo": {}},
     )
     assert response.status == 201
 
@@ -31,20 +34,19 @@ def admin():
 
     # Try to delete project. It should return 404
     # as it should be already deleted by the manager
-    response = api.delete(f"/users/test_user")
-    response = api.delete(f"/projects/{PROJECT_NAME}")
+    api.delete(f"/projects/{PROJECT_NAME}")
+    api.delete(f"/roles/{ROLE_NAME}/_")
+    api.delete(f"/users/{USER_NAME}")
     api.logout()
 
 
 def test_folder_access(admin):
 
-    response = admin.put(f"/users/test_user")
-
     attr = {
         "resolutionWidth": 1920,
         "resolutionHeight": 1080,
         "fps": 25,
-        "whatever": "nope"
+        "whatever": "nope",
     }
 
     as_id = create_entity(admin, "folder", name="assets")
@@ -68,7 +70,16 @@ def test_folder_access(admin):
 
     # In the test environment, artist has access only to assets/characters
     # branch and to the folders with tasks assigned to them
-    api = API.login("artist", "artist")
+
+    assert admin.put(f"/users/{USER_NAME}")
+    assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
+    assert admin.patch(
+        f"/users/{USER_NAME}/roles",
+        roles=[{"role": "artist", "projects": [PROJECT_NAME]}],
+    )
+
+    api = API.login(USER_NAME, PASSWORD)
+    assert api.get("/users/me")
 
     response = api.get(f"/projects/{PROJECT_NAME}/folders/{ch_f}")
     assert response.status == 200
@@ -90,6 +101,8 @@ def test_folder_access(admin):
 
     assert api.get(f"/projects/{PROJECT_NAME}/representations/{ch_r}")
     assert not api.get(f"/projects/{PROJECT_NAME}/representations/{lo_r}")
+
+    admin.delete("/users/test_artist")
 
 
 @pytest.mark.order(-1)

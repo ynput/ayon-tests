@@ -12,9 +12,8 @@ class TestProjects:
         self._delete_test_projects(api)
 
     def _delete_test_projects(self, api):
-        data = api.get("/projects?name=test_projects%").data
-        for project in data["projects"]:
-            api.delete("/projects/{}".format(project["name"]))
+        api.delete("/projects/test_projects_1")
+        api.delete("/projects/test_projects_2")
 
     def test_empty_project(self, api):
         response = api.put("/projects/test_projects_2")
@@ -31,13 +30,10 @@ class TestProjects:
                 "resolutionWidth": 1024,
                 "resolutionHeight": 576,
             },
-            data={
-                "datakey": "dataval",
-                "iwillstay": "here"
-            },
+            data={"datakey": "dataval", "iwillstay": "here"},
             config={
                 "cfgkey": "cfgval",
-            }
+            },
         )
         assert response
 
@@ -54,10 +50,7 @@ class TestProjects:
         response = api.patch(
             f"/projects/{project_name}",
             attrib={"fps": 30},
-            data={
-                "datakey": None,
-                "datakey2": "something"
-            }
+            data={"datakey": None, "datakey2": "something"},
         )
         assert response
 

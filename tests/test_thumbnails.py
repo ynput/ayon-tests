@@ -22,10 +22,10 @@ class TestThumbnails:
 
         yield api
 
-        # response = api.delete(f"/projects/{self.project_name}")
-        # assert response.status == 204
+        response = api.delete(f"/projects/{self.project_name}")
         api.logout()
 
+    @pytest.mark.dependency()
     def test_folder_thumbnail(self, api):
         response = api.post(
             f"projects/{self.project_name}/folders",
@@ -33,8 +33,9 @@ class TestThumbnails:
             folderType="AssetBuild",
         )
         assert response
-
         folder_id = response.data["id"]
+
+        # Create a thumbnail for the folder
 
         response = api.raw_post(
             f"projects/{self.project_name}/folders/{folder_id}/thumbnail",
@@ -43,10 +44,18 @@ class TestThumbnails:
         )
         assert response
 
+        # Ensure the thumbnail is there
+
         response = api.raw_get(
             f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
         )
         assert response == THUMB_DATA1
+
+        # Get the id of the thumbnail (we can re-use it later)
+
+        thumb1_id = api.get(
+            f"projects/{self.project_name}/folders/{folder_id}",
+        ).data["thumbnailId"]
 
         # Update thumbnail
 
@@ -57,7 +66,72 @@ class TestThumbnails:
         )
         assert response
 
+        # Ensure the thumbnail changed
+
         response = api.raw_get(
             f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
         )
         assert response == THUMB_DATA2
+
+        # Let the folder use the old thumbnail
+
+        response = api.patch(
+            f"projects/{self.project_name}/folders/{folder_id}",
+            thumbnail_id=thumb1_id,
+        )
+        assert response
+
+        # Ensure the thumbnail is switched to the old one
+
+        response = api.raw_get(
+            f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
+        )
+        assert response == THUMB_DATA1
+
+    @pytest.mark.dependency(depends=["test_folder_thumbnail"])
+    def test_subset_thumbnail(self, api):
+
+        # Create folder/subset/version
+
+        response = api.post(
+            f"projects/{self.project_name}/folders",
+            name="test2",
+            folderType="AssetBuild",
+        )
+        assert response
+
+        folder_id = response.data["id"]
+
+        response = api.post(
+            f"projects/{self.project_name}/subset",
+            name="test2s",
+            family="theSopranos",
+            folderId=folder_id,
+        )
+        assert response
+
+        subset_id = response.data["id"]
+
+        response = api.post(
+            f"projects/{self.project_name}/versions",
+            version=1,
+            subsetId=subset_id,
+        )
+
+        version_id = response.data["id"]
+
+        # Create thumbnail for the version
+
+        response = api.raw_post(
+            f"projects/{self.project_name}/versions/{version_id}/thumbnail",
+            mime="image/png",
+            data=THUMB_DATA1,
+        )
+        assert response
+
+        # Verify that the thumbnail is there
+
+        response = api.raw_get(
+            f"projects/{self.project_name}/versions/{version_id}/thumbnail"
+        )
+        assert response == THUMB_DATA1

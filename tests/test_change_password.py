@@ -22,7 +22,7 @@ class TestChangePassword:
         response = admin.put(f"/users/{USERNAME}")
         assert response
 
-        response = admin.post(f"/users/{USERNAME}/password", password=PASSWORD)
+        response = admin.patch(f"/users/{USERNAME}/password", password=PASSWORD)
         assert response
 
         usr = API.login(USERNAME, PASSWORD + "wrong")

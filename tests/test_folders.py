@@ -10,9 +10,10 @@ class TestFolders:
     def api(self):
         api = API.login("admin", "admin")
 
+        response = api.delete(f"/projects/{self.project_name}")
+
         response = api.put(
-            f"/projects/{self.project_name}",
-            folder_types={"AssetBuild": {}}
+            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
         )
         assert response.status == 201
 
@@ -26,7 +27,7 @@ class TestFolders:
         response = api.post(
             f"projects/{self.project_name}/folders",
             name="testicek",
-            folderType="AssetBuild"
+            folderType="AssetBuild",
         )
         assert response
 
@@ -35,8 +36,7 @@ class TestFolders:
         # patching
 
         response = api.patch(
-            f"projects/{self.project_name}/folders/{folder_id}",
-            name="testicek2"
+            f"projects/{self.project_name}/folders/{folder_id}", name="testicek2"
         )
         assert response
 
@@ -46,7 +46,7 @@ class TestFolders:
         response = api.post(
             f"projects/{self.project_name}/folders",
             name="root",
-            folderType="AssetBuild"
+            folderType="AssetBuild",
         )
         assert response
         root_id = response["id"]
@@ -55,7 +55,7 @@ class TestFolders:
             f"projects/{self.project_name}/folders",
             name="test",
             folderType="AssetBuild",
-            parent_id=root_id
+            parent_id=root_id,
         )
         assert response
 
@@ -63,7 +63,7 @@ class TestFolders:
             f"projects/{self.project_name}/folders",
             name="test",
             folderType="AssetBuild",
-            parent_id=root_id
+            parent_id=root_id,
         )
         assert not response
 
@@ -72,13 +72,13 @@ class TestFolders:
             name="test",
             folderType="AssetBuild",
             parent_id=root_id,
-            active=False
+            active=False,
         )
         assert response
 
         response = api.post(
             f"projects/{self.project_name}/folders",
             name="root",
-            folderType="AssetBuild"
+            folderType="AssetBuild",
         )
         assert not response

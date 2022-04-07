@@ -11,8 +11,7 @@ class Folders:
         api = API.login("admin", "admin")
 
         response = api.put(
-            f"/projects/{self.project_name}",
-            folder_types={"AssetBuild": {}}
+            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
         )
         assert response.status == 201
 
@@ -26,7 +25,7 @@ class Folders:
         response = api.post(
             f"/projects/{self.project_name}/folders",
             folder_type="AssetBuild",
-            name="child1"
+            name="child1",
         )
         assert response
         child1 = response["id"]
@@ -34,20 +33,19 @@ class Folders:
         response = api.post(
             f"/projects/{self.project_name}/folders",
             folder_type="AssetBuild",
-            name="child2"
+            name="child2",
         )
         assert response
         child2 = response["id"]
 
-        response = api.post(
-            f"/projects/{self.project_name}/folders", name="parent")
+        response = api.post(f"/projects/{self.project_name}/folders", name="parent")
         assert response
         parent = response["id"]
 
         response = api.post(
             f"/projects/{self.project_name}/hierarchy",
             id=parent,
-            children=[child1, child2]
+            children=[child1, child2],
         )
         assert response
 
@@ -60,9 +58,7 @@ class Folders:
         assert response["parentId"] == parent
 
         response = api.post(
-            f"/projects/{self.project_name}/hierarchy",
-            id=None,
-            children=[child1]
+            f"/projects/{self.project_name}/hierarchy", id=None, children=[child1]
         )
         assert response
 
