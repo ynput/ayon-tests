@@ -25,7 +25,6 @@ class TestThumbnails:
         response = api.delete(f"/projects/{self.project_name}")
         api.logout()
 
-    @pytest.mark.dependency()
     def test_folder_thumbnail(self, api):
         response = api.post(
             f"projects/{self.project_name}/folders",
@@ -34,6 +33,14 @@ class TestThumbnails:
         )
         assert response
         folder_id = response.data["id"]
+
+        # Ensure we cannot create an empty thumbnail
+
+        assert not api.raw_post(
+            f"projects/{self.project_name}/folders/{folder_id}/thumbnail",
+            mime="image/png",
+            data=b"",
+        )
 
         # Create a thumbnail for the folder
 
@@ -88,8 +95,7 @@ class TestThumbnails:
         )
         assert response == THUMB_DATA1
 
-    @pytest.mark.dependency(depends=["test_folder_thumbnail"])
-    def test_subset_thumbnail(self, api):
+    def test_version_thumbnail(self, api):
 
         # Create folder/subset/version
 
@@ -103,7 +109,7 @@ class TestThumbnails:
         folder_id = response.data["id"]
 
         response = api.post(
-            f"projects/{self.project_name}/subset",
+            f"projects/{self.project_name}/subsets",
             name="test2s",
             family="theSopranos",
             folderId=folder_id,
