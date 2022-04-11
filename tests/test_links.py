@@ -1,116 +1,130 @@
-import pytest
+from tests.fixtures import api, PROJECT_NAME
 
-from client.api import API
+assert api
 
 
-class TestLinks:
-    project_name = "test_links"
+def test_link_types(api):
+    assert api.put(f"/projects/{PROJECT_NAME}/links/types/breakdown|folder|subset")
 
-    @pytest.fixture(scope="class")
-    def api(self):
-        api = API.login("admin", "admin")
+    response = api.get(f"/projects/{PROJECT_NAME}/links/types")
+    assert response.status == 200
+    assert response.data["types"] == [{"name": "breakdown|folder|subset", "data": {}}]
 
-        response = api.delete(f"/projects/{self.project_name}")
+    assert api.delete(f"/projects/{PROJECT_NAME}/links/types/breakdown|folder|subset")
 
-        response = api.put(
-            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
-        )
-        assert response.status == 201
+    response = api.get(f"/projects/{PROJECT_NAME}/links/types")
+    assert response.status == 200
+    assert response.data["types"] == []
 
-        yield api
+    return
 
-        response = api.delete(f"/projects/{self.project_name}")
-        assert response.status == 204
-        api.logout()
 
-    def test_link_types(self, api):
-        assert api.put(
-            f"/projects/{self.project_name}/links/types/breakdown|folder|subset"
-        )
+def test_link_types_invalid(api):
+    bad_examples = [
+        "whatever",
+        "what|ever",
+        "wha|t|ev|er",
+        "breakdown|folder|subset|",
+        "breakdown|folder|subset|what",
+        "breakdown|what|ever",
+        "breakdown|folder|what",
+    ]
 
-        response = api.get(f"/projects/{self.project_name}/links/types")
-        assert response.status == 200
-        assert response.data["types"] == [
-            {"name": "breakdown|folder|subset", "data": {}}
-        ]
+    for lname in bad_examples:
+        assert not api.put(f"/projects/{PROJECT_NAME}/links/types/{lname}")
 
-        assert api.delete(
-            f"/projects/{self.project_name}/links/types/breakdown|folder|subset"
-        )
 
-        response = api.get(f"/projects/{self.project_name}/links/types")
-        assert response.status == 200
-        assert response.data["types"] == []
+def test_links(api):
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="f1",
+        folderType="Asset",
+    )
+    assert response
+    f1 = response.data["id"]
 
-        return
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="f2",
+        folderType="Asset",
+    )
+    assert response
+    f2 = response.data["id"]
 
-    def test_link_types_invalid(self, api):
-        bad_examples = [
-            "whatever",
-            "what|ever",
-            "wha|t|ev|er",
-            "breakdown|folder|subset|",
-            "breakdown|folder|subset|what",
-            "breakdown|what|ever",
-            "breakdown|folder|what",
-        ]
+    assert api.put(f"/projects/{PROJECT_NAME}/links/types/breakdown|folder|subset")
 
-        for lname in bad_examples:
-            assert not api.put(f"/projects/{self.project_name}/links/types/{lname}")
+    # Should fail because f2 is not a subset
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|subset",
+        input=f1,
+        output=f2,
+    )
 
-    def test_links(self, api):
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="f1",
-            folderType="AssetBuild",
-        )
-        assert response
-        f1 = response.data["id"]
+    # Should fail because folder-folder link is not yet defined
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|folder",
+        input=f1,
+        output=f2,
+    )
 
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="f2",
-            folderType="AssetBuild",
-        )
-        assert response
-        f2 = response.data["id"]
+    assert api.put(f"/projects/{PROJECT_NAME}/links/types/breakdown|folder|folder")
 
-        assert api.put(
-            f"/projects/{self.project_name}/links/types/breakdown|folder|subset"
-        )
+    # Should be ok
+    assert api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|folder",
+        input=f1,
+        output=f2,
+    )
 
-        # Should fail because f2 is not a subset
-        assert not api.post(
-            f"/projects/{self.project_name}/links",
-            link="breakdown|folder|subset",
-            input=f1,
-            output=f2,
-        )
+    # Should fail, because we already have this link
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|folder",
+        input=f1,
+        output=f2,
+    )
 
-        # Should fail because folder-folder link is not yet defined
-        assert not api.post(
-            f"/projects/{self.project_name}/links",
-            link="breakdown|folder|folder",
-            input=f1,
-            output=f2,
-        )
+    # create a subset
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/subsets",
+        name="s1",
+        folder_id=f1,
+        family="thegriffins",
+    )
+    assert response
+    s1 = response.data["id"]
 
-        assert api.put(
-            f"/projects/{self.project_name}/links/types/breakdown|folder|folder"
-        )
+    # try to create subset-folder link (which should fail)
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|subset|folder",
+        input=s1,
+        output=f2,
+    )
 
-        # Should be ok
-        assert api.post(
-            f"/projects/{self.project_name}/links",
-            link="breakdown|folder|folder",
-            input=f1,
-            output=f2,
-        )
+    # create a folder-subset link
+    assert api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|subset",
+        input=f1,
+        output=s1,
+    )
 
-        # Should fail, because we already have this link
-        assert not api.post(
-            f"/projects/{self.project_name}/links",
-            link="breakdown|folder|folder",
-            input=f1,
-            output=f2,
-        )
+    # create a similar link, but wong folder_id
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|subset",
+        input="1234abcd" * 4,
+        output=s1,
+    )
+
+    # create a similar link, but wong subset_id
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/links",
+        link="breakdown|folder|subset",
+        input=f2,
+        output="1234abcd" * 4,
+    )

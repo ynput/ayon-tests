@@ -1,71 +1,53 @@
-import pytest
+from tests.fixtures import api, PROJECT_NAME
 
-from client.api import API
+assert api
 
 
-class Folders:
-    project_name = "test_hierarchy"
+def test_hierarchy(api):
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/folders",
+        folder_type="Asset",
+        name="child1",
+    )
+    assert response
+    child1 = response["id"]
 
-    @pytest.fixture(scope="class")
-    def api(self):
-        api = API.login("admin", "admin")
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/folders",
+        folder_type="Asset",
+        name="child2",
+    )
+    assert response
+    child2 = response["id"]
 
-        response = api.put(
-            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
-        )
-        assert response.status == 201
+    response = api.post(f"/projects/{PROJECT_NAME}/folders", name="parent")
+    assert response
+    parent = response["id"]
 
-        yield api
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/hierarchy",
+        id=parent,
+        children=[child1, child2],
+    )
+    assert response
 
-        response = api.delete(f"/projects/{self.project_name}")
-        assert response.status == 204
-        api.logout()
+    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
+    assert response
+    assert response.get("parentId") == parent
 
-    def test_hierarchy(self, api):
-        response = api.post(
-            f"/projects/{self.project_name}/folders",
-            folder_type="AssetBuild",
-            name="child1",
-        )
-        assert response
-        child1 = response["id"]
+    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
+    assert response
+    assert response.get("parentId") == parent
 
-        response = api.post(
-            f"/projects/{self.project_name}/folders",
-            folder_type="AssetBuild",
-            name="child2",
-        )
-        assert response
-        child2 = response["id"]
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/hierarchy", id=None, children=[child1]
+    )
+    assert response
 
-        response = api.post(f"/projects/{self.project_name}/folders", name="parent")
-        assert response
-        parent = response["id"]
+    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
+    assert response
+    assert response.get("parentId") is None
 
-        response = api.post(
-            f"/projects/{self.project_name}/hierarchy",
-            id=parent,
-            children=[child1, child2],
-        )
-        assert response
-
-        response = api.get(f"/projects/{self.project_name}/folders/{child1}")
-        assert response
-        assert response["parentId"] == parent
-
-        response = api.get(f"/projects/{self.project_name}/folders/{child2}")
-        assert response
-        assert response["parentId"] == parent
-
-        response = api.post(
-            f"/projects/{self.project_name}/hierarchy", id=None, children=[child1]
-        )
-        assert response
-
-        response = api.get(f"/projects/{self.project_name}/folders/{child1}")
-        assert response
-        assert response["parentId"] is None
-
-        response = api.get(f"/projects/{self.project_name}/folders/{child2}")
-        assert response
-        assert response["parentId"] == parent
+    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
+    assert response
+    assert response.get("parentId") == parent

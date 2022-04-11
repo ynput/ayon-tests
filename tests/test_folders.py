@@ -1,84 +1,65 @@
-import pytest
+from tests.fixtures import api, PROJECT_NAME
 
-from client.api import API
+assert api
 
 
-class TestFolders:
-    project_name = "test_folders"
+def test_folders(api):
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="testicek",
+        folderType="Asset",
+    )
+    assert response
 
-    @pytest.fixture(scope="class")
-    def api(self):
-        api = API.login("admin", "admin")
+    folder_id = response.data["id"]
 
-        response = api.delete(f"/projects/{self.project_name}")
+    # patching
 
-        response = api.put(
-            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
-        )
-        assert response.status == 201
+    response = api.patch(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}", name="testicek2"
+    )
+    assert response
 
-        yield api
 
-        response = api.delete(f"/projects/{self.project_name}")
-        assert response.status == 204
-        api.logout()
+def test_unique_names(api):
+    """One parent folder cannot have two children with the same name"""
 
-    def test_folders(self, api):
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="testicek",
-            folderType="AssetBuild",
-        )
-        assert response
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="root",
+        folderType="Asset",
+    )
+    assert response
+    root_id = response["id"]
 
-        folder_id = response.data["id"]
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="test",
+        folderType="Asset",
+        parent_id=root_id,
+    )
+    assert response
 
-        # patching
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="test",
+        folderType="Asset",
+        parent_id=root_id,
+    )
+    assert not response
 
-        response = api.patch(
-            f"projects/{self.project_name}/folders/{folder_id}", name="testicek2"
-        )
-        assert response
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="test",
+        folderType="Asset",
+        parent_id=root_id,
+        active=False,
+    )
+    assert response
 
-    def test_unique_names(self, api):
-        """One parent folder cannot have two children with the same name"""
-
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="root",
-            folderType="AssetBuild",
-        )
-        assert response
-        root_id = response["id"]
-
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="test",
-            folderType="AssetBuild",
-            parent_id=root_id,
-        )
-        assert response
-
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="test",
-            folderType="AssetBuild",
-            parent_id=root_id,
-        )
-        assert not response
-
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="test",
-            folderType="AssetBuild",
-            parent_id=root_id,
-            active=False,
-        )
-        assert response
-
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="root",
-            folderType="AssetBuild",
-        )
-        assert not response
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="root",
+        folderType="Asset",
+    )
+    assert not response

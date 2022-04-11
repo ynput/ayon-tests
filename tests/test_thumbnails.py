@@ -1,143 +1,118 @@
-import pytest
+from tests.fixtures import api, PROJECT_NAME
 
-from client.api import API
+assert api
+
 
 THUMB_DATA1 = b"thisisaveryrandomthumbnailcontent"
 THUMB_DATA2 = b"thisihbhihjhuuyiooanothbnlcontent"
 
 
-class TestThumbnails:
-    project_name = "test_thumbnails"
+def test_folder_thumbnail(api):
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="testicek",
+        folderType="Asset",
+    )
+    assert response
+    folder_id = response.data["id"]
 
-    @pytest.fixture(scope="class")
-    def api(self):
-        api = API.login("admin", "admin")
+    # Ensure we cannot create an empty thumbnail
 
-        response = api.delete(f"/projects/{self.project_name}")
+    assert not api.raw_post(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail",
+        mime="image/png",
+        data=b"",
+    )
 
-        response = api.put(
-            f"/projects/{self.project_name}", folder_types={"AssetBuild": {}}
-        )
-        assert response.status == 201
+    # Create a thumbnail for the folder
 
-        yield api
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail",
+        mime="image/png",
+        data=THUMB_DATA1,
+    )
+    assert response
 
-        response = api.delete(f"/projects/{self.project_name}")
-        api.logout()
+    # Ensure the thumbnail is there
 
-    def test_folder_thumbnail(self, api):
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="testicek",
-            folderType="AssetBuild",
-        )
-        assert response
-        folder_id = response.data["id"]
+    response = api.raw_get(f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail")
+    assert response == THUMB_DATA1
 
-        # Ensure we cannot create an empty thumbnail
+    # Get the id of the thumbnail (we can re-use it later)
 
-        assert not api.raw_post(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail",
-            mime="image/png",
-            data=b"",
-        )
+    thumb1_id = api.get(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+    ).data["thumbnailId"]
 
-        # Create a thumbnail for the folder
+    # Update thumbnail
 
-        response = api.raw_post(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail",
-            mime="image/png",
-            data=THUMB_DATA1,
-        )
-        assert response
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail",
+        mime="image/png",
+        data=THUMB_DATA2,
+    )
+    assert response
 
-        # Ensure the thumbnail is there
+    # Ensure the thumbnail changed
 
-        response = api.raw_get(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
-        )
-        assert response == THUMB_DATA1
+    response = api.raw_get(f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail")
+    assert response == THUMB_DATA2
 
-        # Get the id of the thumbnail (we can re-use it later)
+    # Let the folder use the old thumbnail
 
-        thumb1_id = api.get(
-            f"projects/{self.project_name}/folders/{folder_id}",
-        ).data["thumbnailId"]
+    response = api.patch(
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        thumbnail_id=thumb1_id,
+    )
+    assert response
 
-        # Update thumbnail
+    # Ensure the thumbnail is switched to the old one
 
-        response = api.raw_post(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail",
-            mime="image/png",
-            data=THUMB_DATA2,
-        )
-        assert response
+    response = api.raw_get(f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail")
+    assert response == THUMB_DATA1
 
-        # Ensure the thumbnail changed
 
-        response = api.raw_get(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
-        )
-        assert response == THUMB_DATA2
+def test_version_thumbnail(api):
 
-        # Let the folder use the old thumbnail
+    # Create folder/subset/version
 
-        response = api.patch(
-            f"projects/{self.project_name}/folders/{folder_id}",
-            thumbnail_id=thumb1_id,
-        )
-        assert response
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="test2",
+        folderType="Asset",
+    )
+    assert response
 
-        # Ensure the thumbnail is switched to the old one
+    folder_id = response.data["id"]
 
-        response = api.raw_get(
-            f"projects/{self.project_name}/folders/{folder_id}/thumbnail"
-        )
-        assert response == THUMB_DATA1
+    response = api.post(
+        f"projects/{PROJECT_NAME}/subsets",
+        name="test2s",
+        family="theSopranos",
+        folderId=folder_id,
+    )
+    assert response
 
-    def test_version_thumbnail(self, api):
+    subset_id = response.data["id"]
 
-        # Create folder/subset/version
+    response = api.post(
+        f"projects/{PROJECT_NAME}/versions",
+        version=1,
+        subsetId=subset_id,
+    )
 
-        response = api.post(
-            f"projects/{self.project_name}/folders",
-            name="test2",
-            folderType="AssetBuild",
-        )
-        assert response
+    version_id = response.data["id"]
 
-        folder_id = response.data["id"]
+    # Create thumbnail for the version
 
-        response = api.post(
-            f"projects/{self.project_name}/subsets",
-            name="test2s",
-            family="theSopranos",
-            folderId=folder_id,
-        )
-        assert response
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/versions/{version_id}/thumbnail",
+        mime="image/png",
+        data=THUMB_DATA1,
+    )
+    assert response
 
-        subset_id = response.data["id"]
+    # Verify that the thumbnail is there
 
-        response = api.post(
-            f"projects/{self.project_name}/versions",
-            version=1,
-            subsetId=subset_id,
-        )
-
-        version_id = response.data["id"]
-
-        # Create thumbnail for the version
-
-        response = api.raw_post(
-            f"projects/{self.project_name}/versions/{version_id}/thumbnail",
-            mime="image/png",
-            data=THUMB_DATA1,
-        )
-        assert response
-
-        # Verify that the thumbnail is there
-
-        response = api.raw_get(
-            f"projects/{self.project_name}/versions/{version_id}/thumbnail"
-        )
-        assert response == THUMB_DATA1
+    response = api.raw_get(f"projects/{PROJECT_NAME}/versions/{version_id}/thumbnail")
+    assert response == THUMB_DATA1
