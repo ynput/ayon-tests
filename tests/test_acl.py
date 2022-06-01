@@ -68,6 +68,32 @@ def test_folder_access(admin):
     ch_r = create_entity(admin, "representation", name="psd", versionId=ch_v)
     lo_r = create_entity(admin, "representation", name="psd", versionId=lo_v)
 
+    # Create a role with access to the assets/characters part of the project
+    # And to the folders with tasks assigned to the user
+
+    assert admin.put(
+        f"/roles/{ROLE_NAME}/_",
+        read=[
+            {
+                "access_type": "hierarchy",
+                "path": "assets/characters",
+            },
+            {
+                "access_type": "assigned",
+            },
+        ],
+        update=[
+            {
+                "access_type": "hierarchy",
+                "path": "assets/characters",
+            },
+            {
+                "access_type": "assigned",
+            },
+        ],
+        attrib_read=["resolutionWidth", "resolutionHeight"],
+    )
+
     # In the test environment, artist has access only to assets/characters
     # branch and to the folders with tasks assigned to them
 
@@ -75,7 +101,7 @@ def test_folder_access(admin):
     assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
     assert admin.patch(
         f"/users/{USER_NAME}/roles",
-        roles=[{"role": "artist", "projects": [PROJECT_NAME]}],
+        roles=[{"role": ROLE_NAME, "projects": [PROJECT_NAME]}],
     )
 
     api = API.login(USER_NAME, PASSWORD)
@@ -103,6 +129,35 @@ def test_folder_access(admin):
     assert not api.get(f"/projects/{PROJECT_NAME}/representations/{lo_r}")
 
     admin.delete("/users/test_artist")
+
+
+def test_write_lock_folders_with_publishes(admin):
+    f_id = create_entity(admin, "folder", name="foo")
+
+    assert admin.patch(f"/projects/{PROJECT_NAME}/folders/{f_id}", name="bar")
+    response = admin.get(f"/projects/{PROJECT_NAME}/folders/{f_id}")
+    assert response
+    assert response.data["name"] == "bar"
+
+    # Now create a subset and version
+
+    s_id = create_entity(
+        admin, "subset", name="le_subset", family="complete", folderId=f_id
+    )
+    assert create_entity(admin, "version", version=1, subsetId=s_id)
+
+    # it shouldn't be possible to change the name of the folder now
+    assert not admin.patch(f"/projects/{PROJECT_NAME}/folders/{f_id}", name="no_way")
+
+    # but you can change attributes
+    assert admin.patch(
+        f"/projects/{PROJECT_NAME}/folders/{f_id}", attrib={"resolutionWidth": 42}
+    )
+
+    response = admin.get(f"/projects/{PROJECT_NAME}/folders/{f_id}")
+    assert response
+    assert response.data["name"] == "bar"
+    assert response.data["attrib"]["resolutionWidth"] == 42
 
 
 @pytest.mark.order(-1)

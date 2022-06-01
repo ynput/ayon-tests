@@ -8,7 +8,9 @@ def test_link_types(api):
 
     response = api.get(f"/projects/{PROJECT_NAME}/links/types")
     assert response.status == 200
-    assert response.data["types"] == [{"name": "breakdown|folder|subset", "data": {}}]
+    types = response.data["types"]
+    assert len(types) == 1
+    assert types[0]["name"] == "breakdown|folder|subset"
 
     assert api.delete(f"/projects/{PROJECT_NAME}/links/types/breakdown|folder|subset")
 
