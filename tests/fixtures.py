@@ -2,7 +2,11 @@ import pytest
 from client.api import API
 
 PROJECT_NAME = "test_project"
-PROJECT_META = {"folderTypes": {"Asset": {}}}
+PROJECT_META = {
+    "code": "test", 
+    "folderTypes": {"Asset": {}},
+    "taskTypes": {"Generic": {}}
+}
 
 
 @pytest.fixture()

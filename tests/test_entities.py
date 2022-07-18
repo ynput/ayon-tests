@@ -39,6 +39,21 @@ def subset_id(api, folder_id):
 
 
 @pytest.fixture
+def task_id(api, folder_id):
+    response = api.post(
+        f"projects/{PROJECT_NAME}/tasks",
+        folderId=folder_id,
+        name="test_task",
+        taskType="Generic",
+    )
+    assert response
+    task_id = response.data["id"]
+    yield task_id
+    response = api.delete(f"projects/{PROJECT_NAME}/tasks/{task_id}")
+    assert response
+
+
+@pytest.fixture
 def version_id(api, subset_id):
     response = api.post(
         f"projects/{PROJECT_NAME}/versions",
@@ -80,6 +95,13 @@ def test_folder(api, folder_id):
 def test_subset(api, subset_id):
     response = api.patch(
         f"projects/{PROJECT_NAME}/subsets/{subset_id}", family="Sopranos"
+    )
+    assert response
+
+
+def test_task(api, task_id):
+    response = api.patch(
+        f"projects/{PROJECT_NAME}/tasks/{task_id}", name="walk_the_dog"
     )
     assert response
 

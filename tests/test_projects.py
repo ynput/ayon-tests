@@ -9,6 +9,7 @@ def test_projects(api):
     response = api.put(
         f"/projects/{PROJECT_NAME}",
         name="this will be ignored",
+        code="test",
         attrib={
             "fps": 25,
             "resolutionWidth": 1024,
