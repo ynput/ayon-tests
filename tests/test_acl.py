@@ -5,7 +5,8 @@ from client.api import API
 PROJECT_NAME = "test_acl"
 USER_NAME = "test_artist"
 PASSWORD = "123.456.AbCd"
-ROLE_NAME = "test_artist_role"
+ROLE_NAME1 = "test_artist_role1"
+ROLE_NAME2 = "test_artist_role2"
 
 
 def create_entity(api, entity_type: str, **kwargs):
@@ -26,8 +27,8 @@ def admin():
     response = api.put(
         f"/projects/{PROJECT_NAME}",
         code="test",
-        folder_types={"AssetBuild": {}},
-        task_types={"foo": {}},
+        folder_types={"Asset": {}},
+        task_types={"Generic": {}},
     )
     assert response.status == 201
 
@@ -36,7 +37,7 @@ def admin():
     # Try to delete project. It should return 404
     # as it should be already deleted by the manager
     api.delete(f"/projects/{PROJECT_NAME}")
-    api.delete(f"/roles/{ROLE_NAME}/_")
+    api.delete(f"/roles/{ROLE_NAME1}/_")
     api.delete(f"/users/{USER_NAME}")
     api.logout()
 
@@ -53,15 +54,17 @@ def test_folder_access(admin):
     as_id = create_entity(admin, "folder", name="assets")
     ch_id = create_entity(admin, "folder", name="characters", parentId=as_id)
     lo_id = create_entity(admin, "folder", name="locations", parentId=as_id)
+    pr_id = create_entity(admin, "folder", name="props", parentId=as_id)
 
     ch_f = create_entity(admin, "folder", name="ch1", parentId=ch_id, attrib=attr)
     lo_f = create_entity(admin, "folder", name="lo1", parentId=lo_id)
+    pr_f = create_entity(admin, "folder", name="pr1", parentId=pr_id)
 
     ch_s = create_entity(admin, "subset", name="chs", family="foo", folderId=ch_f)
     lo_s = create_entity(admin, "subset", name="chs", family="foo", folderId=lo_f)
 
-    ch_t = create_entity(admin, "task", name="chs", taskType="foo", folderId=ch_f)
-    lo_t = create_entity(admin, "task", name="chs", taskType="foo", folderId=lo_f)
+    ch_t = create_entity(admin, "task", name="chs", taskType="Generic", folderId=ch_f)
+    lo_t = create_entity(admin, "task", name="chs", taskType="Generic", folderId=lo_f)
 
     ch_v = create_entity(admin, "version", version=1, subsetId=ch_s)
     lo_v = create_entity(admin, "version", version=1, subsetId=lo_s)
@@ -73,26 +76,44 @@ def test_folder_access(admin):
     # And to the folders with tasks assigned to the user
 
     assert admin.put(
-        f"/roles/{ROLE_NAME}/_",
-        read=[
-            {
-                "access_type": "hierarchy",
-                "path": "assets/characters",
-            },
-            {
-                "access_type": "assigned",
-            },
-        ],
-        update=[
-            {
-                "access_type": "hierarchy",
-                "path": "assets/characters",
-            },
-            {
-                "access_type": "assigned",
-            },
-        ],
-        attrib_read=["resolutionWidth", "resolutionHeight"],
+        f"/roles/{ROLE_NAME1}/_",
+        read={
+            "enabled": True,
+            "access_list": [
+                {"access_type": "hierarchy", "path": "assets/characters"},
+            ],
+        },
+        update={
+            "enabled": True,
+            "access_list": [
+                {"access_type": "hierarchy", "path": "assets/characters"},
+            ],
+        },
+        attrib_read={
+            "enabled": True,
+            "attributes": ["resolutionWidth", "resolutionHeight"],
+        },
+    )
+
+    assert admin.put(
+        f"/roles/{ROLE_NAME2}/_",
+        read={
+            "enabled": True,
+            "access_list": [
+                {"access_type": "hierarchy", "path": "assets/props"},
+                {"access_type": "assigned"},
+            ],
+        },
+        update={
+            "enabled": True,
+            "access_list": [
+                {"access_type": "assigned"},
+            ],
+        },
+        attrib_read={
+            "enabled": True,
+            "attributes": ["fps"],
+        },
     )
 
     # In the test environment, artist has access only to assets/characters
@@ -102,7 +123,7 @@ def test_folder_access(admin):
     assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
     assert admin.patch(
         f"/users/{USER_NAME}/roles",
-        roles=[{"role": ROLE_NAME, "projects": [PROJECT_NAME]}],
+        roles=[{"roles": [ROLE_NAME1, ROLE_NAME2], "project": PROJECT_NAME}],
     )
 
     api = API.login(USER_NAME, PASSWORD)
@@ -114,9 +135,33 @@ def test_folder_access(admin):
     assert "resolutionWidth" in response.data["attrib"]
     assert "resolutionHeight" in response.data["attrib"]
 
+    # From role2, user should have read access to props
+    response = api.get(f"/projects/{PROJECT_NAME}/folders/{pr_f}")
+    assert response.status == 200
+
+    # But not for writing unless a task is assigned
+    response = api.patch(f"/projects/{PROJECT_NAME}/folders/{pr_f}", attrib={"fps": 99})
+    assert response.status == 403
+
+    # so... let's assing a task
+    _ = create_entity(
+        admin,
+        "task",
+        name="render",
+        folderId=pr_f,
+        taskType="Generic",
+        assignees=[USER_NAME],
+    )
+
+    # and try again
+    response = api.patch(f"/projects/{PROJECT_NAME}/folders/{pr_f}", attrib={"fps": 99})
+    assert response.status == 204
+
+    # To locations, user shouldn't have access at all
     response = api.get(f"/projects/{PROJECT_NAME}/folders/{lo_f}")
     assert response.status == 403
 
+    # Test nested entities
     assert api.get(f"/projects/{PROJECT_NAME}/subsets/{ch_s}")
     assert not api.get(f"/projects/{PROJECT_NAME}/subsets/{lo_s}")
 
@@ -166,7 +211,10 @@ def test_project_delete(admin):
     # Try to delete the project as a normal user
     # It should return 403 (forbidden)
 
-    api = API.login("user", "user")
+    assert admin.put(f"/users/{USER_NAME}")
+    assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
+
+    api = API.login(USER_NAME, PASSWORD)
     response = api.delete(f"/projects/{PROJECT_NAME}")
     assert response.status == 403
 
