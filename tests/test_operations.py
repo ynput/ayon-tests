@@ -7,7 +7,7 @@ def create_uuid() -> str:
     return uuid.uuid1().hex
 
 
-def test_edit(api):
+def test_operations(api):
 
     # Create
 
@@ -31,7 +31,7 @@ def test_edit(api):
     ]
 
     result = api.post(
-        f"/projects/{PROJECT_NAME}/edit",
+        f"/projects/{PROJECT_NAME}/operations",
         operations=operations,
         canFail=False,
     )
@@ -68,7 +68,7 @@ def test_edit(api):
     ]
 
     result = api.post(
-        f"/projects/{PROJECT_NAME}/edit",
+        f"/projects/{PROJECT_NAME}/operations",
         operations=operations,
         canFail=False,
     )
@@ -104,7 +104,7 @@ def test_edit(api):
     ]
 
     result = api.post(
-        f"/projects/{PROJECT_NAME}/edit",
+        f"/projects/{PROJECT_NAME}/operations",
         operations=operations,
         canFail=False,
     )
@@ -140,7 +140,7 @@ def test_edit(api):
     ]
 
     result = api.post(
-        f"/projects/{PROJECT_NAME}/edit",
+        f"/projects/{PROJECT_NAME}/operations",
         operations=operations,
         canFail=False,
     )
@@ -193,7 +193,7 @@ def test_hierarchical_attributes(api):
     ]
 
     result = api.post(
-        f"/projects/{PROJECT_NAME}/edit",
+        f"/projects/{PROJECT_NAME}/operations",
         operations=operations,
         canFail=False,
     )
