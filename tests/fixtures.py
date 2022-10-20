@@ -3,9 +3,9 @@ from client.api import API
 
 PROJECT_NAME = "test_project"
 PROJECT_META = {
-    "code": "test", 
+    "code": "test",
     "folderTypes": {"Asset": {}},
-    "taskTypes": {"Generic": {}}
+    "taskTypes": {"Generic": {}},
 }
 
 
