@@ -90,7 +90,7 @@ def test_operations(api):
             "type": "update",
             "entityType": "folder",
             "entityId": ids[0],
-            "data": {"name": "this shouldn't be saved"},
+            "data": {"name": "wont_be_saved"},
         },
         {
             "type": "update",
