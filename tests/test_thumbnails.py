@@ -116,3 +116,33 @@ def test_version_thumbnail(api):
 
     response = api.raw_get(f"projects/{PROJECT_NAME}/versions/{version_id}/thumbnail")
     assert response == THUMB_DATA1
+
+
+def test_direct_thumbnail(api):
+    # Create a thumbnail not associated with any entity
+
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/thumbnails",
+        mime="image/png",
+        data=THUMB_DATA1,
+    )
+    assert response
+
+    thumb_id = response.data["id"]
+
+    # Create a folder and associate the thumbnail with it
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="test3",
+        folderType="Asset",
+        thumbnail_id=thumb_id,
+    )
+    assert response
+
+    folder_id = response.data["id"]
+
+    # Ensure the thumbnail is there
+
+    response = api.raw_get(f"projects/{PROJECT_NAME}/folders/{folder_id}/thumbnail")
+    assert response == THUMB_DATA1

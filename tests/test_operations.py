@@ -12,6 +12,9 @@ def test_operations(api):
     # Create
 
     parent_id = create_uuid()
+    subset_id = create_uuid()
+    version_id = create_uuid()
+    representation_id = create_uuid()
     operations = [
         {
             "type": "create",
@@ -28,6 +31,34 @@ def test_operations(api):
                 "parentId": parent_id,
             },
         },
+        {
+            "type": "create",
+            "entityType": "subset",
+            "entityId": subset_id,
+            "data": {
+                "name": "test_subset",
+                "folderId": parent_id,
+                "family": "test",
+            },
+        },
+        {
+            "type": "create",
+            "entityType": "version",
+            "entityId": version_id,
+            "data": {
+                "subsetId": subset_id,
+                "version": 1,
+            },
+        },
+        {
+            "type": "create",
+            "entityType": "representation",
+            "entityId": representation_id,
+            "data": {
+                "versionId": version_id,
+                "name": "test",
+            },
+        },
     ]
 
     result = api.post(
@@ -41,12 +72,14 @@ def test_operations(api):
 
     ids = [x["entityId"] for x in result.data["operations"]]
 
-    assert len(ids) == 2
+    assert len(ids) == len(operations)
 
     for i, id in enumerate(ids):
-        response = api.get(f"/projects/{PROJECT_NAME}/folders/{id}")
+        response = api.get(
+            f"/projects/{PROJECT_NAME}/{operations[i]['entityType']}s/{id}"
+        )
         assert response
-        assert response.data["name"] == operations[i]["data"]["name"]
+        assert response.data.get("name") == operations[i]["data"].get("name")
 
     #
     # Update
@@ -75,6 +108,8 @@ def test_operations(api):
 
     assert result
     assert result.data["success"]
+
+    ids = [x["entityId"] for x in result.data["operations"]]
 
     for i, id in enumerate(ids):
         response = api.get(f"/projects/{PROJECT_NAME}/folders/{id}")
@@ -148,6 +183,7 @@ def test_operations(api):
     assert result
     assert result.data["success"]
 
+    ids = [x["entityId"] for x in result.data["operations"]]
     for id in ids:
         response = api.get(f"/projects/{PROJECT_NAME}/folders/{id}")
         assert not response
