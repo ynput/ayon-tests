@@ -118,6 +118,55 @@ def test_version_thumbnail(api):
     assert response == THUMB_DATA1
 
 
+def test_workfile_thumbnail(api):
+    # Create a folder first
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="workfile_parent",
+        folderType="Asset",
+    )
+    assert response
+    folder_id = response.data["id"]
+
+    # Create a task on the folder
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/tasks",
+        name="workfile_task",
+        taskType="Generic",
+        folderId=folder_id,
+    )
+
+    assert response
+    task_id = response.data["id"]
+
+    # Create a workfile
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/workfiles",
+        name="test_workfile",
+        path="/some/path",
+        taskId=task_id,
+    )
+    assert response
+    workfile_id = response.data["id"]
+
+    # Create a thumbnail for the workfile
+
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/workfiles/{workfile_id}/thumbnail",
+        mime="image/png",
+        data=THUMB_DATA1,
+    )
+    assert response
+
+    # Ensure the thumbnail is there
+
+    response = api.raw_get(f"projects/{PROJECT_NAME}/workfiles/{workfile_id}/thumbnail")
+    assert response == THUMB_DATA1
+
+
 def test_direct_thumbnail(api):
     # Create a thumbnail not associated with any entity
 
