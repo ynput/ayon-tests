@@ -7,11 +7,11 @@ from typing import Any
 class RestResponse:
     """REST API Response."""
 
-    def __init__(self, status: int = 200, **data):
-        self.status = status
+    def __init__(self, _status_code: int, **data):
+        self.status = _status_code
         self.data = data
         # We should never get server error
-        assert status < 500, data.get("detail", "Internal server error")
+        assert self.status < 500, data.get("detail", "Internal server error")
 
     @property
     def detail(self) -> str:

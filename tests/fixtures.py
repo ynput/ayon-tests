@@ -4,8 +4,16 @@ from client.api import API
 PROJECT_NAME = "test_project"
 PROJECT_META = {
     "code": "test",
-    "folderTypes": {"Asset": {}},
-    "taskTypes": {"Generic": {}},
+    "folderTypes": [
+        {"name": "Folder"},
+        {"name": "Asset"},
+    ],
+    "taskTypes": [
+        {"name": "Generic"},
+    ],
+    "statuses": [
+        {"name": "Unknown"},
+    ],
 }
 
 
@@ -15,5 +23,5 @@ def api():
     api.delete(f"/projects/{PROJECT_NAME}")
     assert api.put(f"/projects/{PROJECT_NAME}", **PROJECT_META)
     yield api
-    assert api.delete(f"/projects/{PROJECT_NAME}")
+    api.delete(f"/projects/{PROJECT_NAME}")
     api.logout()

@@ -11,9 +11,9 @@ def test_folder_types(api):
 
     response = api.get(f"/projects/{PROJECT_NAME}")
     assert response
-    assert "Asset" in response.data["folderTypes"]
+    assert "Asset" in [k.get("name") for k in response.data["folderTypes"]]
 
-    # Create a folder of AssetBuild type
+    # Create a folder of Asset type (which should be allowed by the fixture)
     response = api.post(
         f"projects/{PROJECT_NAME}/folders",
         name="test_folder",
@@ -36,7 +36,10 @@ def test_folder_types(api):
 
     response = api.patch(
         f"projects/{PROJECT_NAME}",
-        folder_types={"Asset": {"name": "AssetType"}},
+        folderTypes=[
+            {"name": "Folder"},
+            {"name": "AssetBuild", "original_name": "Asset"},
+        ],
     )
     assert response
 
@@ -44,9 +47,13 @@ def test_folder_types(api):
 
     response = api.get(f"projects/{PROJECT_NAME}/folders/{folder_id}")
     assert response
-    assert response["folderType"] == "AssetType"
+    assert response["folderType"] == "AssetBuild"
 
     # Add a few more folder types
+
+    return
+
+    # TODO
 
     response = api.patch(
         f"projects/{PROJECT_NAME}",

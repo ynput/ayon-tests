@@ -1,8 +1,8 @@
 import pytest
 
+from tests.fixtures import api, PROJECT_NAME
 from client.api import API
 
-PROJECT_NAME = "test_acl"
 USER_NAME = "test_artist"
 PASSWORD = "123.456.AbCd"
 ROLE_NAME1 = "test_artist_role1"
@@ -16,30 +16,13 @@ def create_entity(api, entity_type: str, **kwargs):
 
 
 @pytest.fixture
-def admin():
-    api = API.login("admin", "admin")
-
+def admin(api):
     api.delete(f"/users/{USER_NAME}")
-    api.delete(f"/projects/{PROJECT_NAME}")
-
-    # Create a testing project
-
-    response = api.put(
-        f"/projects/{PROJECT_NAME}",
-        code="test",
-        folder_types={"Asset": {}},
-        task_types={"Generic": {}},
-    )
-    assert response.status == 201
 
     yield api
 
-    # Try to delete project. It should return 404
-    # as it should be already deleted by the manager
-    api.delete(f"/projects/{PROJECT_NAME}")
     api.delete(f"/roles/{ROLE_NAME1}/_")
     api.delete(f"/users/{USER_NAME}")
-    api.logout()
 
 
 def test_folder_access(admin):

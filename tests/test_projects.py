@@ -1,4 +1,4 @@
-from tests.fixtures import api, PROJECT_NAME
+from tests.fixtures import api, PROJECT_NAME, PROJECT_META
 
 assert api
 
@@ -9,7 +9,6 @@ def test_projects(api):
     response = api.put(
         f"/projects/{PROJECT_NAME}",
         name="this will be ignored",
-        code="test",
         attrib={
             "fps": 25,
             "resolutionWidth": 1024,
@@ -19,6 +18,7 @@ def test_projects(api):
         config={
             "cfgkey": "cfgval",
         },
+        **PROJECT_META,
     )
     assert response
 

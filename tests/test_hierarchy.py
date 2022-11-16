@@ -20,7 +20,11 @@ def test_hierarchy(api):
     assert response
     child2 = response["id"]
 
-    response = api.post(f"/projects/{PROJECT_NAME}/folders", name="parent")
+    response = api.post(
+        f"/projects/{PROJECT_NAME}/folders",
+        folderType="Folder",
+        name="parent",
+    )
     assert response
     parent = response["id"]
 
@@ -40,7 +44,9 @@ def test_hierarchy(api):
     assert response.get("parentId") == parent
 
     response = api.post(
-        f"/projects/{PROJECT_NAME}/hierarchy", id=None, children=[child1]
+        f"/projects/{PROJECT_NAME}/hierarchy",
+        id=None,
+        children=[child1],
     )
     assert response
 
