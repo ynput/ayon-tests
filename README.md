@@ -1,1 +1,3 @@
-# openpype4-tests
+# Ayon tests
+
+Tests for Ayon API
