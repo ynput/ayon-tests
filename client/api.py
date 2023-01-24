@@ -1,11 +1,27 @@
 import json
 import simplejson  # just because of the exceptions
 import requests
+import platform
+import codenamize
+import uuid
 
 from typing import Any, Dict
 from nxtools import logging
 
 from .responses import RestResponse, GraphQLResponse
+
+
+def get_ayon_headers() -> Dict[str, str]:
+    platform_info = platform.system().lower()
+    assert platform_info in ("linux", "windows", "darwin")
+    client_id = codenamize.codenamize(str(uuid.getnode()), 5)
+    return {
+        "x-ayon-platform": platform_info,
+        "x-ayon-version": "1.0.0",
+        "x-ayon-client-id": client_id,
+        "x-ayon-hostname": platform.node(),
+    }
+
 
 
 class API:

@@ -19,6 +19,13 @@ def test_dependency_packages(api):
 
     assert res
 
+    # check that the package is there
+
+    res = api.get("dependencies")
+    assert res
+    assert "test_package" in [r["name"] for r in res.data["packages"]]
+    assert res.data["productionPackage"] == "test_package"
+
     # upload the package
     res = api.raw_post(
         "dependencies/test_package/windows",
@@ -31,11 +38,9 @@ def test_dependency_packages(api):
     res = api.raw_get("dependencies/test_package/windows")
     assert res == TEST_PACKAGE
 
-
     # ensure it is now listed in sources
     res = api.get("dependencies")
     assert res
-
 
     # delete the package
     res = api.delete("dependencies/test_package/windows")

@@ -3,6 +3,7 @@ from client.api import API
 
 USERNAME = "testuser1"
 PASSWORD = "jeuf8jfqf2fqj..FNDF"
+APIKEY = "12340000000000000000000000004321"
 
 
 @pytest.fixture()
@@ -39,3 +40,17 @@ def test_user_password(admin):
     assert response.data["name"] == USERNAME
 
     usr.logout()
+
+
+    response = admin.patch(f"/users/{USERNAME}", data={"isService": True})
+    assert response
+
+    response = admin.patch(f"/users/{USERNAME}/password", apiKey=APIKEY)
+    assert response 
+
+    response = admin.get(f"/users/{USERNAME}")
+    assert response
+    assert response.data["data"].get("apiKey")
+    assert response.data["data"].get("apiKeyPreview") == "1234***4321"
+
+
