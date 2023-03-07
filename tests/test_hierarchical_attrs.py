@@ -58,6 +58,13 @@ def test_hierarchical_attrs(api):
         f"projects/{PROJECT_NAME}/folders/{folder_id}", attrib={"resolutionWidth": 2000}
     )
     assert response
+    
+    # check the parent
+
+    response = api.get(f"projects/{PROJECT_NAME}/folders/{folder_id}")
+    assert response
+    attrib = response.data["attrib"]
+    assert attrib["resolutionWidth"] == 2000
 
     # reload the child
 

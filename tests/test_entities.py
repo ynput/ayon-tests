@@ -88,8 +88,13 @@ def representation_id(api, version_id):
 
 
 def test_folder(api, folder_id):
-    response = api.patch(f"projects/{PROJECT_NAME}/folders/{folder_id}", name="foobar")
+    response = api.patch(f"projects/{PROJECT_NAME}/folders/{folder_id}", name="foobar", attrib={"resolutionWidth": 1234})
     assert response
+
+    folder = api.get(f"projects/{PROJECT_NAME}/folders/{folder_id}")
+    assert folder
+    assert folder.data["attrib"]["resolutionWidth"] == 1234
+
 
 
 def test_subset(api, subset_id):
@@ -112,6 +117,7 @@ def test_representation(api, representation_id):
     response = api.patch(
         repre_url,
         data={"randomkey": "abcd"},
+        attrib={"resolutionWidth": 1234},
         files=[
             {
                 "id": "1234567890",
@@ -123,10 +129,21 @@ def test_representation(api, representation_id):
 
     repre = api.get(repre_url)
     assert repre
+
+    assert repre.data["attrib"]["resolutionWidth"] == 1234
+
+    response = api.patch(repre_url, attrib={"resolutionWidth": 4321})
+    assert response
+
+    repre = api.get(repre_url)
+    assert repre
+
+    assert repre.data["attrib"]["resolutionWidth"] == 4321
+
     # assert len(repre["files"]) == 1
 
-    #response = api.patch(repre_url, files=[{"size": 400}])
-    #assert not response
+    # response = api.patch(repre_url, files=[{"size": 400}])
+    # assert not response
 
 
 # REMOVED. Site sync is no longer a part of the core API.

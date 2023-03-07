@@ -165,8 +165,52 @@ def test_operations(api):
         {
             "type": "delete",
             "entityType": "folder",
-            "entityId": ids[1],
+            "entityId": ids[0],
         },
+    ]
+
+    result = api.post(
+        f"/projects/{PROJECT_NAME}/operations",
+        operations=operations,
+        canFail=False,
+    )
+
+    # This is expected to fail because the parent folder is not empty
+    assert result
+    assert result.data["success"] is False
+
+    # Delete subset and versions:
+
+    operations = [
+        {
+            "type": "delete",
+            "entityType": "representation",
+            "entityId": representation_id,
+        },
+        {
+            "type": "delete",
+            "entityType": "version",
+            "entityId": version_id,
+        },
+        {
+            "type": "delete",
+            "entityType": "subset",
+            "entityId": subset_id,
+        },
+    ]
+
+    result = api.post(
+        f"/projects/{PROJECT_NAME}/operations",
+        operations=operations,
+        canFail=False,
+    )
+
+    assert result
+    assert result.data["success"]
+
+    # now try to delete the folder again
+
+    operations = [
         {
             "type": "delete",
             "entityType": "folder",
@@ -234,6 +278,8 @@ def test_hierarchical_attributes(api):
         canFail=False,
     )
 
+    # This is expected to fail, because there is a subset in the
+    # one of the folders
     assert result
     assert result.data["success"]
 
