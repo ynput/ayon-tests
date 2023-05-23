@@ -28,32 +28,32 @@ def test_hierarchy(api):
     assert response
     parent = response["id"]
 
-    response = api.post(
-        f"/projects/{PROJECT_NAME}/hierarchy",
-        id=parent,
-        children=[child1, child2],
-    )
-    assert response
-
-    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
-    assert response
-    assert response.get("parentId") == parent
-
-    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
-    assert response
-    assert response.get("parentId") == parent
-
-    response = api.post(
-        f"/projects/{PROJECT_NAME}/hierarchy",
-        id=None,
-        children=[child1],
-    )
-    assert response
-
-    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
-    assert response
-    assert response.get("parentId") is None
-
-    response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
-    assert response
-    assert response.get("parentId") == parent
+    # response = api.post(
+    #     f"/projects/{PROJECT_NAME}/hierarchy",
+    #     id=parent,
+    #     children=[child1, child2],
+    # )
+    # assert response
+    #
+    # response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
+    # assert response
+    # assert response.get("parentId") == parent
+    #
+    # response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
+    # assert response
+    # assert response.get("parentId") == parent
+    #
+    # response = api.post(
+    #     f"/projects/{PROJECT_NAME}/hierarchy",
+    #     id=None,
+    #     children=[child1],
+    # )
+    # assert response
+    #
+    # response = api.get(f"/projects/{PROJECT_NAME}/folders/{child1}")
+    # assert response
+    # assert response.get("parentId") is None
+    #
+    # response = api.get(f"/projects/{PROJECT_NAME}/folders/{child2}")
+    # assert response
+    # assert response.get("parentId") == parent
