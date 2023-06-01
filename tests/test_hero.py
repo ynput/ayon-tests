@@ -13,22 +13,22 @@ def test_hero(api):
 
     folder_id = response.data["id"]
 
-    # create a subset
+    # create a product
 
     response = api.post(
-        f"projects/{PROJECT_NAME}/subsets",
+        f"projects/{PROJECT_NAME}/products",
         folderId=folder_id,
         name="test",
-        family="whatever",
+        productType="whatever",
     )
 
     assert response
-    subset_id = response.data["id"]
+    product_id = response.data["id"]
 
     # create a hero version
 
     response = api.post(
-        f"projects/{PROJECT_NAME}/versions", subsetId=subset_id, version=-1
+        f"projects/{PROJECT_NAME}/versions", productId=product_id, version=-1
     )
 
     assert response
@@ -38,14 +38,14 @@ def test_hero(api):
     # attempt to create another hero version
 
     response = api.post(
-        f"projects/{PROJECT_NAME}/versions", subsetId=subset_id, version=-2
+        f"projects/{PROJECT_NAME}/versions", productId=product_id, version=-2
     )
 
     assert not response
 
     # create a non-hero version
     response = api.post(
-        f"projects/{PROJECT_NAME}/versions", subsetId=subset_id, version=2
+        f"projects/{PROJECT_NAME}/versions", productId=product_id, version=2
     )
 
     assert response

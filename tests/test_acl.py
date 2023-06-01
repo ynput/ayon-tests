@@ -43,14 +43,14 @@ def test_folder_access(admin):
     lo_f = create_entity(admin, "folder", name="lo1", parentId=lo_id)
     pr_f = create_entity(admin, "folder", name="pr1", parentId=pr_id)
 
-    ch_s = create_entity(admin, "subset", name="chs", family="foo", folderId=ch_f)
-    lo_s = create_entity(admin, "subset", name="chs", family="foo", folderId=lo_f)
+    ch_s = create_entity(admin, "product", name="chs", productType="foo", folderId=ch_f)
+    lo_s = create_entity(admin, "product", name="chs", productType="foo", folderId=lo_f)
 
     ch_t = create_entity(admin, "task", name="chs", taskType="Generic", folderId=ch_f)
     lo_t = create_entity(admin, "task", name="chs", taskType="Generic", folderId=lo_f)
 
-    ch_v = create_entity(admin, "version", version=1, subsetId=ch_s)
-    lo_v = create_entity(admin, "version", version=1, subsetId=lo_s)
+    ch_v = create_entity(admin, "version", version=1, productId=ch_s)
+    lo_v = create_entity(admin, "version", version=1, productId=lo_s)
 
     ch_r = create_entity(admin, "representation", name="psd", versionId=ch_v)
     lo_r = create_entity(admin, "representation", name="psd", versionId=lo_v)
@@ -145,8 +145,8 @@ def test_folder_access(admin):
     assert response.status == 403
 
     # Test nested entities
-    assert api.get(f"/projects/{PROJECT_NAME}/subsets/{ch_s}")
-    assert not api.get(f"/projects/{PROJECT_NAME}/subsets/{lo_s}")
+    assert api.get(f"/projects/{PROJECT_NAME}/products/{ch_s}")
+    assert not api.get(f"/projects/{PROJECT_NAME}/products/{lo_s}")
 
     assert api.get(f"/projects/{PROJECT_NAME}/tasks/{ch_t}")
     assert not api.get(f"/projects/{PROJECT_NAME}/tasks/{lo_t}")
@@ -168,12 +168,12 @@ def test_write_lock_folders_with_publishes(admin):
     assert response
     assert response.data["name"] == "bar"
 
-    # Now create a subset and version
+    # Now create a product and version
 
     s_id = create_entity(
-        admin, "subset", name="le_subset", family="complete", folderId=f_id
+        admin, "product", name="le_product", productType="complete", folderId=f_id
     )
-    assert create_entity(admin, "version", version=1, subsetId=s_id)
+    assert create_entity(admin, "version", version=1, productId=s_id)
 
     # it shouldn't be possible to change the name of the folder now
     assert not admin.patch(f"/projects/{PROJECT_NAME}/folders/{f_id}", name="no_way")

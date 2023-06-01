@@ -74,7 +74,7 @@ def test_folder_thumbnail(api):
 
 def test_version_thumbnail(api):
 
-    # Create folder/subset/version
+    # Create folder/product/version
 
     response = api.post(
         f"projects/{PROJECT_NAME}/folders",
@@ -86,19 +86,19 @@ def test_version_thumbnail(api):
     folder_id = response.data["id"]
 
     response = api.post(
-        f"projects/{PROJECT_NAME}/subsets",
+        f"projects/{PROJECT_NAME}/products",
         name="test2s",
-        family="theSopranos",
+        productType="theSopranos",
         folderId=folder_id,
     )
     assert response
 
-    subset_id = response.data["id"]
+    product_id = response.data["id"]
 
     response = api.post(
         f"projects/{PROJECT_NAME}/versions",
         version=1,
-        subsetId=subset_id,
+        productId=product_id,
     )
 
     version_id = response.data["id"]

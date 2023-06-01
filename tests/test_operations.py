@@ -12,7 +12,7 @@ def test_operations(api):
     # Create
 
     parent_id = create_uuid()
-    subset_id = create_uuid()
+    product_id = create_uuid()
     version_id = create_uuid()
     representation_id = create_uuid()
     operations = [
@@ -33,12 +33,12 @@ def test_operations(api):
         },
         {
             "type": "create",
-            "entityType": "subset",
-            "entityId": subset_id,
+            "entityType": "product",
+            "entityId": product_id,
             "data": {
-                "name": "test_subset",
+                "name": "test_product",
                 "folderId": parent_id,
-                "family": "test",
+                "productType": "test",
             },
         },
         {
@@ -46,7 +46,7 @@ def test_operations(api):
             "entityType": "version",
             "entityId": version_id,
             "data": {
-                "subsetId": subset_id,
+                "productId": product_id,
                 "version": 1,
             },
         },
@@ -179,7 +179,7 @@ def test_operations(api):
     assert result
     assert result.data["success"] is False
 
-    # Delete subset and versions:
+    # Delete product and versions:
 
     operations = [
         {
@@ -194,8 +194,8 @@ def test_operations(api):
         },
         {
             "type": "delete",
-            "entityType": "subset",
-            "entityId": subset_id,
+            "entityType": "product",
+            "entityId": product_id,
         },
     ]
 
@@ -278,7 +278,7 @@ def test_hierarchical_attributes(api):
         canFail=False,
     )
 
-    # This is expected to fail, because there is a subset in the
+    # This is expected to fail, because there is a product in the
     # one of the folders
     assert result
     assert result.data["success"]

@@ -16,18 +16,18 @@ def test_access_ok(api):
         name="folder",
         folderType="Asset",
     )
-    subset_id = create_entity(
+    product_id = create_entity(
         api,
-        "subset",
+        "product",
         name="test",
-        family="thesimpsons",
+        productType="thesimpsons",
         folderId=folder_id,
     )
     version_id = create_entity(
         api,
         "version",
         version=42,
-        subsetId=subset_id,
+        productId=product_id,
     )
     representation_id = create_entity(
         api,

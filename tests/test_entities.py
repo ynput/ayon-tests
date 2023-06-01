@@ -24,17 +24,17 @@ def folder_id(api):
 
 
 @pytest.fixture
-def subset_id(api, folder_id):
+def product_id(api, folder_id):
     response = api.post(
-        f"projects/{PROJECT_NAME}/subsets",
+        f"projects/{PROJECT_NAME}/products",
         folderId=folder_id,
-        name="test_subset",
-        family="TheSimpsons",
+        name="test_product",
+        productType="TheSimpsons",
     )
     assert response
-    subset_id = response.data["id"]
-    yield subset_id
-    response = api.delete(f"projects/{PROJECT_NAME}/subsets/{subset_id}")
+    product_id = response.data["id"]
+    yield product_id
+    response = api.delete(f"projects/{PROJECT_NAME}/products/{product_id}")
     assert response
 
 
@@ -54,10 +54,10 @@ def task_id(api, folder_id):
 
 
 @pytest.fixture
-def version_id(api, subset_id):
+def version_id(api, product_id):
     response = api.post(
         f"projects/{PROJECT_NAME}/versions",
-        subsetId=subset_id,
+        productId=product_id,
         version=42,
     )
     assert response
@@ -97,9 +97,9 @@ def test_folder(api, folder_id):
 
 
 
-def test_subset(api, subset_id):
+def test_product(api, product_id):
     response = api.patch(
-        f"projects/{PROJECT_NAME}/subsets/{subset_id}", family="Sopranos"
+        f"projects/{PROJECT_NAME}/products/{product_id}", productType="Sopranos"
     )
     assert response
 

@@ -29,19 +29,19 @@ def test_statuses(api):
     entities["folder"] = res["id"]
 
     res = api.post(
-        f"/projects/{PROJECT_NAME}/subsets",
-        name="subset",
-        family="the_simpsons",
+        f"/projects/{PROJECT_NAME}/products",
+        name="product",
+        productType="the_simpsons",
         folderId=entities["folder"],
     )
 
     assert res
-    entities["subset"] = res["id"]
+    entities["product"] = res["id"]
 
     res = api.post(
         f"/projects/{PROJECT_NAME}/versions",
         version=1,
-        subsetId=entities["subset"],
+        productId=entities["product"],
     )
 
     assert res

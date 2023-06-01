@@ -169,15 +169,14 @@ def test_hierarchical_attrs(api):
         canFail=False,
     )
 
-    try:
-        import time
-   
-        time.sleep(3500)
-    except KeyboardInterrupt:
-        pass
+    # try:
+    #     import time
+    #     time.sleep(3500)
+    # except KeyboardInterrupt:
+    #     pass
 
     query = f"""
-    query {{
+    query ReCheck {{
         project(name: "{PROJECT_NAME}") {{
             task(id: "{task_id}") {{
                 ownAttrib 
@@ -196,5 +195,5 @@ def test_hierarchical_attrs(api):
     response = api.gql(query)
     assert response
     assert response.data["project"]["task"]["ownAttrib"] == ["resolutionHeight"]
-    assert response.data["project"]["task"]["attrib"]["fps"] == 50
     assert response.data["project"]["task"]["attrib"]["resolutionHeight"] == 1234
+    assert response.data["project"]["task"]["attrib"]["fps"] == 50

@@ -14,25 +14,25 @@ def test_graphql(api):
         )
         assert response
 
-        # for each folder create 100 subsets
+        # for each folder create 100 products
 
         folder_id = response.data["id"]
         response = api.post(
-            f"projects/{PROJECT_NAME}/subsets",
+            f"projects/{PROJECT_NAME}/products",
             folderId=folder_id,
             name=f"test_{i}",
-            family="whatever",
+            productType="whatever",
         )
 
         assert response
-        subset_id = response.data["id"]
+        product_id = response.data["id"]
 
-        # for each subset create 100 versions
+        # for each product create 100 versions
 
         for j in range(10):
             response = api.post(
                 f"projects/{PROJECT_NAME}/versions",
-                subsetId=subset_id,
+                productId=product_id,
                 version=j,
             )
 
