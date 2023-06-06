@@ -23,7 +23,6 @@ def get_ayon_headers() -> Dict[str, str]:
     }
 
 
-
 class API:
     """OpenPype API client"""
 
@@ -95,7 +94,11 @@ class API:
                         500, detail=f"The response is not a JSON: {response.text}"
                     )
                 else:
-                    response = RestResponse(response.status_code, **data)
+                    if type(data) == dict:
+                        response = RestResponse(response.status_code, **data)
+                    else:
+                        response = RestResponse(200)
+                        response.data = data
         if self.debug:
             if response:
                 logging.goodnews(response)
@@ -108,6 +111,13 @@ class API:
         url = f"{self.server_url}/api/{endpoint}"
         return self._request(
             self.session.post, url, data=data, headers={"Content-Type": mime}
+        )
+
+    def raw_put(self, endpoint: str, mime: str, data: bytes) -> RestResponse:
+        endpoint = endpoint.strip("/")
+        url = f"{self.server_url}/api/{endpoint}"
+        return self._request(
+            self.session.put, url, data=data, headers={"Content-Type": mime}
         )
 
     def raw_get(self, endpoint: str, **kwargs) -> RestResponse:
