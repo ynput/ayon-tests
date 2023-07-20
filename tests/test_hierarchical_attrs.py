@@ -18,7 +18,10 @@ def test_hierarchical_attrs(api):
         f"projects/{PROJECT_NAME}/folders",
         name="testicek",
         folderType="Asset",
-        attrib={"fps": 25},
+        attrib={
+            "fps": 25,
+            "description": "description1"
+        },
     )
     assert response
     folder_id = response.data["id"]
@@ -29,6 +32,7 @@ def test_hierarchical_attrs(api):
 
     assert attrib["fps"] == 25
     assert attrib["resolutionWidth"] == 1920
+    assert attrib["description"] == "description1"
 
     # Create a child
 
@@ -51,6 +55,7 @@ def test_hierarchical_attrs(api):
     assert child_attrib["fps"] == 50
     assert child_attrib["resolutionWidth"] == 1920
     assert child_attrib["resolutionHeight"] == 1080
+    assert not child_attrib.get("description")
 
     # Update the parent
 
