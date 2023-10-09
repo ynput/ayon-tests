@@ -48,14 +48,15 @@ def test_unique_names(api):
     )
     assert not response
 
-    response = api.post(
-        f"projects/{PROJECT_NAME}/folders",
-        name="test",
-        folderType="Asset",
-        parent_id=root_id,
-        active=False,
-    )
-    assert response
+    # TODO: remove this when we allow duplicate names in the same folder 
+    # response = api.post(
+    #     f"projects/{PROJECT_NAME}/folders",
+    #     name="test",
+    #     folderType="Asset",
+    #     parent_id=root_id,
+    #     active=False,
+    # )
+    # assert response
 
     response = api.post(
         f"projects/{PROJECT_NAME}/folders",

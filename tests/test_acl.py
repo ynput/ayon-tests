@@ -7,6 +7,7 @@ USER_NAME = "test_artist"
 PASSWORD = "123.456.AbCd"
 ROLE_NAME1 = "test_artist_role1"
 ROLE_NAME2 = "test_artist_role2"
+ROLE_NAME3 = "test_artist_role3"
 
 
 def create_entity(api, entity_type: str, **kwargs):
@@ -21,12 +22,11 @@ def admin(api):
 
     yield api
 
-    api.delete(f"/roles/{ROLE_NAME1}/_")
+    api.delete(f"/accessGroups/{ROLE_NAME1}/_")
     api.delete(f"/users/{USER_NAME}")
 
 
 def test_folder_access(admin):
-
     attr = {
         "resolutionWidth": 1920,
         "resolutionHeight": 1080,
@@ -59,7 +59,7 @@ def test_folder_access(admin):
     # And to the folders with tasks assigned to the user
 
     assert admin.put(
-        f"/roles/{ROLE_NAME1}/_",
+        f"/accessGroups/{ROLE_NAME1}/_",
         read={
             "enabled": True,
             "access_list": [
@@ -79,7 +79,7 @@ def test_folder_access(admin):
     )
 
     assert admin.put(
-        f"/roles/{ROLE_NAME2}/_",
+        f"/accessGroups/{ROLE_NAME2}/_",
         read={
             "enabled": True,
             "access_list": [
@@ -105,8 +105,10 @@ def test_folder_access(admin):
     assert admin.put(f"/users/{USER_NAME}")
     assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
     assert admin.patch(
-        f"/users/{USER_NAME}/roles",
-        roles=[{"roles": [ROLE_NAME1, ROLE_NAME2], "project": PROJECT_NAME}],
+        f"/users/{USER_NAME}/accessGroups",
+        accessGroups=[
+            {"accessGroups": [ROLE_NAME1, ROLE_NAME2], "project": PROJECT_NAME}
+        ],
     )
 
     api = API.login(USER_NAME, PASSWORD)
@@ -187,6 +189,84 @@ def test_write_lock_folders_with_publishes(admin):
     assert response
     assert response.data["name"] == "bar"
     assert response.data["attrib"]["resolutionWidth"] == 42
+
+
+def test_publishing(admin):
+    # Create two folders, each with a task
+
+    f1_id = create_entity(admin, "folder", name="foo")
+    t1_id = create_entity(
+        admin,
+        "task",
+        name="bar",
+        folderId=f1_id,
+        taskType="Generic",
+    )
+
+    f2_id = create_entity(admin, "folder", name="foo2")
+    t2_id = create_entity(
+        admin,
+        "task",
+        name="bar2",
+        folderId=f2_id,
+        taskType="Generic",
+    )
+
+    # Create a role.
+    # This role is allowed to see everything, but users cannot modify
+    # anything and they can only publish to the task assigned to them
+    assert admin.put(
+        f"/accessGroups/{ROLE_NAME3}/_",
+        update={
+            "enabled": True,
+            "access_list": [],
+        },
+        publish={
+            "enabled": True,
+            "access_list": [
+                {"access_type": "assigned"},
+            ],
+        },
+    )
+
+    # Create a user and assign the role to him
+
+    assert admin.put(f"/users/{USER_NAME}")
+    assert admin.patch(f"/users/{USER_NAME}/password", password=PASSWORD)
+    assert admin.patch(
+        f"/users/{USER_NAME}/accessGroups",
+        accessGroups=[{"accessGroups": [ROLE_NAME3], "project": PROJECT_NAME}],
+    )
+
+    # assign task 1 to the user
+
+    assert admin.patch(f"/projects/{PROJECT_NAME}/tasks/{t1_id}", assignees=[USER_NAME])
+
+    # Login as the user
+
+    api = API.login(USER_NAME, PASSWORD)
+
+    # Try to publish to the folder with task 1
+    # (create a product and a version)
+
+    s_id = create_entity(
+        api, "product", name="le_product", productType="beer", folderId=f1_id
+    )
+
+    create_entity(api, "version", version=1, productId=s_id)
+
+    # It should work
+
+    # Try to publish to the folder with task 2
+
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/products",
+        folderId=f2_id,
+        productType="beer",
+    )
+
+    api.delete(f"/accessGroups/{ROLE_NAME3}/_")
+    api.delete(f"/users/{USER_NAME}")
 
 
 @pytest.mark.order(-1)

@@ -22,6 +22,16 @@ def users(api):
     api.delete(f"/users/{OTHER_USER_NAME}")
 
 
+def test_user_preferences(users, api):
+    response = api.patch(f"/users/{OTHER_USER_NAME}/frontendPreferences", foo="bar",)
+    assert response
+
+    response = api.get(f"/users/{OTHER_USER_NAME}")
+
+    assert response and response.data["data"].get("frontendPreferences", {}).get("foo") == "bar"
+
+
+
 def test_user_rename(users, api):
     response = api.post(f"/projects/{PROJECT_NAME}/folders", name="assets")
     assert response
