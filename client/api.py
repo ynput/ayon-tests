@@ -1,5 +1,4 @@
 import json
-import simplejson  # just because of the exceptions
 import requests
 import platform
 import codenamize
@@ -88,7 +87,7 @@ class API:
             else:
                 try:
                     data = response.json()
-                except (json.JSONDecodeError, simplejson.errors.JSONDecodeError):
+                except json.JSONDecodeError:
                     logging.error(response.text)
                     response = RestResponse(
                         500, detail=f"The response is not a JSON: {response.text}"

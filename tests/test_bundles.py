@@ -12,10 +12,18 @@ FILENAME = "test-package-9.7.4.zip"
 def test_bundles(api):
     api.delete("bundles/test-bundle")
 
+    addons = {}
+
+    res = api.get("addons")
+    assert res.data.get("addons"), "No addons found"
+    for addon in res.data["addons"]:
+        addons[addon["name"]] = addon["productionVersion"]
+
+
     bundle_data = {
         "name": "test-bundle",
         "installerVersion": "9.7.4",
-        "addons": {"addon1": "1.0.0", "addon2": "2.0.0", "addon3": "3.0.0"},
+        "addons": addons,
         "dependencyPackages": {
             "windows": "winpkg.zip",
         },
