@@ -26,6 +26,14 @@ FILES = [
 ]
 
 
+def patch_and_get(api, url, **kwargs):
+    response = api.patch(url, **kwargs)
+    assert response
+    result = api.get(url)
+    assert result
+    return result.data
+
+
 @pytest.fixture
 def folder_id(api):
     response = api.post(
@@ -98,16 +106,39 @@ def representation_id(api, version_id):
 
 
 def test_folder(api, folder_id):
-    response = api.patch(
+    result = patch_and_get(
+        api,
         f"projects/{PROJECT_NAME}/folders/{folder_id}",
         name="foobar",
         attrib={"resolutionWidth": 1234},
+        data={"foo": "bar"},
     )
-    assert response
+    assert result["attrib"]["resolutionWidth"] == 1234
+    assert result["data"] == {"foo": "bar"}
 
-    folder = api.get(f"projects/{PROJECT_NAME}/folders/{folder_id}")
-    assert folder
-    assert folder.data["attrib"]["resolutionWidth"] == 1234
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        data={"foo": "baz"},
+    )
+    assert result["attrib"]["resolutionWidth"] == 1234
+    assert result["data"] == {"foo": "baz"}
+
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        data = {"alpha": "beta"},
+    )
+
+    assert result["attrib"]["resolutionWidth"] == 1234
+    assert result["data"] == {"alpha": "beta", "foo": "baz"}
+
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        data = {"alpha": None},
+    )
+    assert result["data"] == {"foo": "baz"}
 
 
 def test_product(api, product_id):
@@ -115,6 +146,39 @@ def test_product(api, product_id):
         f"projects/{PROJECT_NAME}/products/{product_id}", productType="Sopranos"
     )
     assert response
+
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/products/{product_id}",
+        data={"foo": "baz"},
+    )
+    assert result["data"] == {"foo": "baz"}
+
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/products/{product_id}",
+        data = {"alpha": "beta"},
+    )
+
+    assert result["data"] == {"alpha": "beta", "foo": "baz"}
+
+def test_version(api, version_id):
+    response = api.get(f"projects/{PROJECT_NAME}/versions/{version_id}")
+    assert response
+    assert response.data["version"] == 42
+    assert response.data["author"] == "admin"
+
+    response = api.patch(
+        f"projects/{PROJECT_NAME}/versions/{version_id}",
+        author="john",
+        )
+
+    assert response
+
+    response = api.get(f"projects/{PROJECT_NAME}/versions/{version_id}")
+    assert response
+    assert response.data["version"] == 42
+    assert response.data["author"] == "john"
 
 
 def test_task(api, task_id):
