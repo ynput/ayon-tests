@@ -17,8 +17,7 @@ def test_bundles(api):
     res = api.get("addons")
     assert res.data.get("addons"), "No addons found"
     for addon in res.data["addons"]:
-        addons[addon["name"]] = addon["productionVersion"]
-
+        addons[addon["name"]] = addon.get("productionVersion")
 
     bundle_data = {
         "name": "test-bundle",
