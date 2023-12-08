@@ -8,7 +8,6 @@ def create_uuid() -> str:
 
 
 def test_operations(api):
-
     # Create
 
     parent_id = create_uuid()
@@ -182,6 +181,32 @@ def test_operations(api):
     assert result
     assert result.data["success"] is False
 
+    # Try update the same entity multiple times
+
+    operations = [
+        {
+            "type": "update",
+            "entityType": "folder",
+            "entityId": ids[0],
+            "data": {"name": "test_folder1_edited"},
+        },
+        {
+            "type": "update",
+            "entityType": "folder",
+            "entityId": ids[0],
+            "data": {"name": "test_folder1_edited_again"},
+        },
+    ]
+
+    result = api.post(
+        f"/projects/{PROJECT_NAME}/operations",
+        operations=operations,
+        canFail=False,
+    )
+
+    # This MUST fail
+    assert result.status == 400, "Expected a 400 error"
+
     # Delete product and versions:
 
     operations = [
@@ -237,7 +262,6 @@ def test_operations(api):
 
 
 def test_hierarchical_attributes(api):
-
     root_id = create_uuid()
     folder_id = create_uuid()
     asset_id = create_uuid()
