@@ -81,6 +81,9 @@ def test_operations(api):
         assert response
         assert response.data.get("name") == operations[i]["data"].get("name")
 
+        if operations[i]["entityType"] == "version":
+            assert response.data.get("author") == "admin"
+
     #
     # Update
     #
