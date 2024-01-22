@@ -1,3 +1,4 @@
+import time
 import pytest
 
 from tests.fixtures import api, PROJECT_NAME
@@ -129,7 +130,7 @@ def test_folder_access(admin):
     assert response.status == 403
 
     # so... let's assing a task
-    _ = create_entity(
+    task_id = create_entity(
         admin,
         "task",
         name="render",
@@ -194,20 +195,20 @@ def test_write_lock_folders_with_publishes(admin):
 def test_publishing(admin):
     # Create two folders, each with a task
 
-    f1_id = create_entity(admin, "folder", name="foo")
+    f1_id = create_entity(admin, "folder", name="assigned_folder")
     t1_id = create_entity(
         admin,
         "task",
-        name="bar",
+        name="assigned_task",
         folderId=f1_id,
         taskType="Generic",
     )
 
-    f2_id = create_entity(admin, "folder", name="foo2")
+    f2_id = create_entity(admin, "folder", name="unassigned_folder")
     t2_id = create_entity(
         admin,
         "task",
-        name="bar2",
+        name="unassigned_task",
         folderId=f2_id,
         taskType="Generic",
     )
@@ -217,16 +218,11 @@ def test_publishing(admin):
     # anything and they can only publish to the task assigned to them
     assert admin.put(
         f"/accessGroups/{ROLE_NAME3}/_",
-        update={
-            "enabled": True,
-            "access_list": [],
-        },
-        publish={
-            "enabled": True,
-            "access_list": [
-                {"access_type": "assigned"},
-            ],
-        },
+        read={"enabled": True, "access_list": [{"access_type": "assigned"}]},
+        create={"enabled": True},
+        delete={"enabled": True},
+        update={"enabled": True},
+        publish={"enabled": True, "access_list": [{"access_type": "assigned"}]},
     )
 
     # Create a user and assign the role to him
@@ -242,9 +238,20 @@ def test_publishing(admin):
 
     assert admin.patch(f"/projects/{PROJECT_NAME}/tasks/{t1_id}", assignees=[USER_NAME])
 
+    # try:
+    #     time.sleep(3600)
+    # except KeyboardInterrupt:
+    #     pass
+
     # Login as the user
 
     api = API.login(USER_NAME, PASSWORD)
+
+    assert api.get(f"/projects/{PROJECT_NAME}/folders/{f1_id}")
+    assert api.get(f"/projects/{PROJECT_NAME}/tasks/{t1_id}")
+
+    assert not api.get(f"/projects/{PROJECT_NAME}/folders/{f2_id}")
+    assert not api.get(f"/projects/{PROJECT_NAME}/tasks/{t2_id}")
 
     # Try to publish to the folder with task 1
     # (create a product and a version)
@@ -253,7 +260,8 @@ def test_publishing(admin):
         api, "product", name="le_product", productType="beer", folderId=f1_id
     )
 
-    create_entity(api, "version", version=1, productId=s_id)
+    v1_id = create_entity(api, "version", version=1, productId=s_id)
+    create_entity(api, "representation", name="ma", versionId=v1_id)
 
     # It should work
 
@@ -263,6 +271,40 @@ def test_publishing(admin):
         f"/projects/{PROJECT_NAME}/products",
         folderId=f2_id,
         productType="beer",
+    )
+
+    # now create the same as admin
+
+    p2_id = create_entity(
+        admin, "product", name="le_product", productType="beer", folderId=f2_id
+    )
+
+    # and ensure version cannot be created by user
+
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/versions",
+        productId=p2_id,
+        version=1,
+    )
+
+    # try create workfile for task 1
+    # it should work
+
+    assert api.post(
+        f"/projects/{PROJECT_NAME}/workfiles",
+        taskId=t1_id,
+        path="/some/path",
+        name="wfname",
+    )
+
+    # try create workfile for task 2
+    # it should fail
+
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/workfiles",
+        taskId=t2_id,
+        path="/some/other/path",
+        name="wfname2",
     )
 
     api.delete(f"/accessGroups/{ROLE_NAME3}/_")

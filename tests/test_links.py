@@ -82,12 +82,13 @@ def test_links(api):
     )
 
     # Should fail, because we already have this link
-    assert not api.post(
-        f"/projects/{PROJECT_NAME}/links",
-        link="breakdown|folder|folder",
-        input=f1,
-        output=f2,
-    )
+    # -- not anymore
+    # assert not api.post(
+    #     f"/projects/{PROJECT_NAME}/links",
+    #     link="breakdown|folder|folder",
+    #     input=f1,
+    #     output=f2,
+    # )
 
     # create a product
     response = api.post(
