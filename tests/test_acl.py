@@ -39,6 +39,7 @@ def test_folder_access(admin):
     ch_id = create_entity(admin, "folder", name="characters", parentId=as_id)
     lo_id = create_entity(admin, "folder", name="locations", parentId=as_id)
     pr_id = create_entity(admin, "folder", name="props", parentId=as_id)
+    writable_folder_id = create_entity(admin, "folder", name="writable", parentId=as_id)
 
     ch_f = create_entity(admin, "folder", name="ch1", parentId=ch_id, attrib=attr)
     lo_f = create_entity(admin, "folder", name="lo1", parentId=lo_id)
@@ -61,6 +62,10 @@ def test_folder_access(admin):
 
     assert admin.put(
         f"/accessGroups/{ROLE_NAME1}/_",
+        create={
+            "enabled": True,
+            "access_list": [{"access_type": "hierarchy", "path": "assets/writable"}],
+        },
         read={
             "enabled": True,
             "access_list": [
@@ -73,6 +78,7 @@ def test_folder_access(admin):
                 {"access_type": "hierarchy", "path": "assets/characters"},
             ],
         },
+        publish={"enabled": True, "access_list": [{"access_type": "assigned"}]},
         attrib_read={
             "enabled": True,
             "attributes": ["resolutionWidth", "resolutionHeight"],
@@ -81,6 +87,7 @@ def test_folder_access(admin):
 
     assert admin.put(
         f"/accessGroups/{ROLE_NAME2}/_",
+        create={"enabled": True},
         read={
             "enabled": True,
             "access_list": [
@@ -94,6 +101,7 @@ def test_folder_access(admin):
                 {"access_type": "assigned"},
             ],
         },
+        publish={"enabled": True, "access_list": [{"access_type": "assigned"}]},
         attrib_read={
             "enabled": True,
             "attributes": ["fps"],
@@ -112,9 +120,18 @@ def test_folder_access(admin):
         ],
     )
 
+    # resulting roleshet should have
+    # - read access to assets/characters
+    # - read access to assets/props
+    # - read access to folders with assigned tasks
+    # - update access to assets/characters
+    # - update access to folders with assigned tasks
+    # - ability to read fps, resolutionWidth and resolutionHeight attributes
+
     api = API.login(USER_NAME, PASSWORD)
     assert api.get("/users/me")
 
+    # user should have read access to assets/characters because of the role1
     response = api.get(f"/projects/{PROJECT_NAME}/folders/{ch_f}")
     assert response.status == 200
     # assert len(response.data["attrib"]) == 2
@@ -129,7 +146,7 @@ def test_folder_access(admin):
     response = api.patch(f"/projects/{PROJECT_NAME}/folders/{pr_f}", attrib={"fps": 99})
     assert response.status == 403
 
-    # so... let's assing a task
+    # so... let's assing a task on one of the folders in assets/props
     task_id = create_entity(
         admin,
         "task",
@@ -160,6 +177,31 @@ def test_folder_access(admin):
     assert api.get(f"/projects/{PROJECT_NAME}/representations/{ch_r}")
     assert not api.get(f"/projects/{PROJECT_NAME}/representations/{lo_r}")
 
+    # try to create a task as a normal user
+
+    # this should fail as the user doesn't have access to the folder
+    assert not api.post(
+        f"/projects/{PROJECT_NAME}/tasks",
+        name="test_task",
+        folderId=ch_f,
+        taskType="Generic",
+    )
+
+    # try:
+    #     time.sleep(3600)
+    # except KeyboardInterrupt:
+    #     pass
+    # but they do to assets/writable
+
+    assert api.post(
+        f"/projects/{PROJECT_NAME}/tasks",
+        name="test_task",
+        folderId=writable_folder_id,
+        taskType="Generic",
+        assignees=[USER_NAME],
+    )
+
+    # remove the user
     admin.delete("/users/test_artist")
 
 
@@ -238,11 +280,6 @@ def test_publishing(admin):
 
     assert admin.patch(f"/projects/{PROJECT_NAME}/tasks/{t1_id}", assignees=[USER_NAME])
 
-    # try:
-    #     time.sleep(3600)
-    # except KeyboardInterrupt:
-    #     pass
-
     # Login as the user
 
     api = API.login(USER_NAME, PASSWORD)
@@ -271,6 +308,7 @@ def test_publishing(admin):
         f"/projects/{PROJECT_NAME}/products",
         folderId=f2_id,
         productType="beer",
+        name="le_beer",
     )
 
     # now create the same as admin
@@ -305,6 +343,42 @@ def test_publishing(admin):
         taskId=t2_id,
         path="/some/other/path",
         name="wfname2",
+    )
+
+    # as long user has access to the task, he can assign thumbnails
+    # to folders even if he doesn't have update access to the folder
+
+    assert api.raw_post(
+        f"projects/{PROJECT_NAME}/folders/{f1_id}/thumbnail",
+        mime="image/png",
+        data=b"123132456134564874654321",
+    )
+
+    assert not api.raw_post(
+        f"projects/{PROJECT_NAME}/folders/{f2_id}/thumbnail",
+        mime="image/png",
+        data=b"12313245646484684684684684",
+    )
+
+    # they should even create a blind thumbnail
+
+    response = api.raw_post(
+        f"projects/{PROJECT_NAME}/thumbnails",
+        mime="image/png",
+        data=b"12313245646484684684684684",
+    )
+    assert response
+
+    thumb_id = response.data["id"]
+
+    # and assign it to the folder
+
+    assert api.patch(f"projects/{PROJECT_NAME}/folders/{f1_id}", thumbnailId=thumb_id)
+
+    # but not to the other folder
+
+    assert not api.patch(
+        f"projects/{PROJECT_NAME}/folders/{f2_id}", thumbnailId=thumb_id
     )
 
     api.delete(f"/accessGroups/{ROLE_NAME3}/_")
