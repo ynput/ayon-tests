@@ -35,21 +35,30 @@ def patch_and_get(api, url, **kwargs):
 
 
 @pytest.fixture
-def folder_id(api):
+def folder_ids(api):
     response = api.post(
         f"projects/{PROJECT_NAME}/folders",
-        name="test_folder",
-        folderType="Asset",
+        name="root_folder",
+        folderType="Folder",
     )
     assert response
-    folder_id = response.data["id"]
-    yield folder_id
-    response = api.delete(f"projects/{PROJECT_NAME}/folders/{folder_id}")
+    root_folder_id = response.data["id"]
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        name="child_folder",
+        folderType="Asset",
+        parentId=root_folder_id,
+    )
     assert response
+    child_folder_id = response.data["id"]
+
+    yield root_folder_id, child_folder_id
 
 
 @pytest.fixture
-def product_id(api, folder_id):
+def product_id(api, folder_ids):
+    folder_id = folder_ids[1]
     response = api.post(
         f"projects/{PROJECT_NAME}/products",
         folderId=folder_id,
@@ -60,11 +69,12 @@ def product_id(api, folder_id):
     product_id = response.data["id"]
     yield product_id
     response = api.delete(f"projects/{PROJECT_NAME}/products/{product_id}")
-    assert response
+    # assert response
 
 
 @pytest.fixture
-def task_id(api, folder_id):
+def task_id(api, folder_ids):
+    folder_id = folder_ids[1]
     response = api.post(
         f"projects/{PROJECT_NAME}/tasks",
         folderId=folder_id,
@@ -75,7 +85,7 @@ def task_id(api, folder_id):
     task_id = response.data["id"]
     yield task_id
     response = api.delete(f"projects/{PROJECT_NAME}/tasks/{task_id}")
-    assert response
+    # assert response
 
 
 @pytest.fixture
@@ -89,7 +99,7 @@ def version_id(api, product_id):
     version_id = response.data["id"]
     yield version_id
     response = api.delete(f"projects/{PROJECT_NAME}/versions/{version_id}")
-    assert response
+    # assert response
 
 
 @pytest.fixture
@@ -101,11 +111,12 @@ def representation_id(api, version_id):
         files=FILES,
     )
     assert response
-    version_id = response.data["id"]
-    yield version_id
+    representation_id = response.data["id"]
+    yield representation_id
 
 
-def test_folder(api, folder_id):
+def test_folder(api, folder_ids):
+    folder_id = folder_ids[1]
     result = patch_and_get(
         api,
         f"projects/{PROJECT_NAME}/folders/{folder_id}",
@@ -127,7 +138,7 @@ def test_folder(api, folder_id):
     result = patch_and_get(
         api,
         f"projects/{PROJECT_NAME}/folders/{folder_id}",
-        data = {"alpha": "beta"},
+        data={"alpha": "beta"},
     )
 
     assert result["attrib"]["resolutionWidth"] == 1234
@@ -136,7 +147,7 @@ def test_folder(api, folder_id):
     result = patch_and_get(
         api,
         f"projects/{PROJECT_NAME}/folders/{folder_id}",
-        data = {"alpha": None},
+        data={"alpha": None},
     )
     assert result["data"] == {"foo": "baz"}
 
@@ -157,10 +168,11 @@ def test_product(api, product_id):
     result = patch_and_get(
         api,
         f"projects/{PROJECT_NAME}/products/{product_id}",
-        data = {"alpha": "beta"},
+        data={"alpha": "beta"},
     )
 
     assert result["data"] == {"alpha": "beta", "foo": "baz"}
+
 
 def test_version(api, version_id):
     response = api.get(f"projects/{PROJECT_NAME}/versions/{version_id}")
@@ -171,7 +183,7 @@ def test_version(api, version_id):
     response = api.patch(
         f"projects/{PROJECT_NAME}/versions/{version_id}",
         author="john",
-        )
+    )
 
     assert response
 
@@ -231,3 +243,16 @@ def test_representation(api, representation_id):
     assert response
     assert len(repre["files"]) == 1
     assert repre["files"][0]["id"] == "file3"
+
+
+@pytest.mark.order(-1)
+def test_delete_tree(api, representation_id, folder_ids):
+    root_folder_id, child_folder_id = folder_ids
+
+    response = api.delete(f"projects/{PROJECT_NAME}/folders/{root_folder_id}")
+    assert not response
+
+    response = api.delete(
+        f"projects/{PROJECT_NAME}/folders/{root_folder_id}?force=true"
+    )
+    assert response

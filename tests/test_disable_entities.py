@@ -4,7 +4,7 @@ from tests.fixtures import api, PROJECT_NAME
 
 from .test_entities import (
     patch_and_get,
-    folder_id,
+    folder_ids,
     product_id,
     version_id,
     representation_id,
@@ -12,13 +12,15 @@ from .test_entities import (
 )
 
 
-def test_folder(api, folder_id):
+def test_folder(api, folder_ids):
+    folder_id = folder_ids[1]
     result = patch_and_get(
         api,
         f"projects/{PROJECT_NAME}/folders/{folder_id}",
         active=False,
     )
     assert result["active"] == False
+
 
 def test_product(api, product_id):
     result = patch_and_get(
@@ -28,6 +30,7 @@ def test_product(api, product_id):
     )
     assert result["active"] == False
 
+
 def test_version(api, version_id):
     result = patch_and_get(
         api,
@@ -35,6 +38,7 @@ def test_version(api, version_id):
         active=False,
     )
     assert result["active"] == False
+
 
 def test_representation(api, representation_id):
     result = patch_and_get(
@@ -44,6 +48,7 @@ def test_representation(api, representation_id):
     )
     assert result["active"] == False
 
+
 def test_task(api, task_id):
     result = patch_and_get(
         api,
@@ -51,5 +56,3 @@ def test_task(api, task_id):
         active=False,
     )
     assert result["active"] == False
-
-
