@@ -245,6 +245,20 @@ def test_representation(api, representation_id):
     assert repre["files"][0]["id"] == "file3"
 
 
+def test_explicit_id(api):
+    import uuid
+    my_folder_id = uuid.uuid4().hex
+
+    response = api.post(
+        f"projects/{PROJECT_NAME}/folders",
+        id=my_folder_id,
+        name="explicit_id_folder",
+        folderType="Folder",
+    )
+    assert response
+    assert response.data["id"] == my_folder_id
+
+
 @pytest.mark.order(-1)
 def test_delete_tree(api, representation_id, folder_ids):
     root_folder_id, child_folder_id = folder_ids
