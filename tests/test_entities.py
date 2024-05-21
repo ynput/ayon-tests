@@ -151,6 +151,20 @@ def test_folder(api, folder_ids):
     )
     assert result["data"] == {"foo": "baz"}
 
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        label="Foo bar",
+    )
+    assert result["label"] == "Foo bar"
+
+    result = patch_and_get(
+        api,
+        f"projects/{PROJECT_NAME}/folders/{folder_id}",
+        label=None,
+    )
+    assert "label" not in result, f"label should be removed, but is {result['label']}"
+
 
 def test_product(api, product_id):
     response = api.patch(
@@ -195,9 +209,22 @@ def test_version(api, version_id):
 
 def test_task(api, task_id):
     response = api.patch(
-        f"projects/{PROJECT_NAME}/tasks/{task_id}", name="walk_the_dog"
+        f"projects/{PROJECT_NAME}/tasks/{task_id}",
+        name="walk_the_dog",
+        label="Walk the dog",
     )
     assert response
+
+
+    response = api.patch(
+        f"projects/{PROJECT_NAME}/tasks/{task_id}",
+        label=None,
+    )
+    assert response
+
+    response = api.get(f"projects/{PROJECT_NAME}/tasks/{task_id}")
+    assert response
+    assert "label" not in response.data, f"label should be removed, but is {response.data['label']}"
 
 
 def test_representation(api, representation_id):
@@ -247,6 +274,7 @@ def test_representation(api, representation_id):
 
 def test_explicit_id(api):
     import uuid
+
     my_folder_id = uuid.uuid4().hex
 
     response = api.post(
