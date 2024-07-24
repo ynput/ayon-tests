@@ -1,3 +1,4 @@
+import time
 import pytest
 from tests.fixtures import api, PROJECT_NAME
 
@@ -114,6 +115,22 @@ def representation_id(api, version_id):
     representation_id = response.data["id"]
     yield representation_id
 
+def test_workfile(api, task_id):
+    response = api.post(
+        f"projects/{PROJECT_NAME}/workfiles",
+        taskId=task_id,
+        path="/path/to/my_workfile",
+    )
+    assert response
+    workfile_id = response.data["id"]
+
+    workfile = api.get(f"projects/{PROJECT_NAME}/workfiles/{workfile_id}")
+    assert workfile
+    assert workfile.data["path"] == "/path/to/my_workfile"
+    assert "createdBy" in workfile.data, f"createdBy not in {workfile.data}"
+    assert "updatedBy" in workfile.data, f"updatedBy not in {workfile.data}"
+    assert workfile.data["createdBy"] == "admin"
+    assert workfile.data["updatedBy"] == "admin"
 
 def test_folder(api, folder_ids):
     folder_id = folder_ids[1]
