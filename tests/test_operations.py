@@ -206,6 +206,33 @@ def test_operations(api):
 
     # This MUST fail
     assert result.status == 400, "Expected a 400 error"
+    
+
+    # Test canFail
+
+    operations = [
+        {
+            "type": "update",
+            "entityType": "folder",
+            "entityId": ids[0],
+            "data": {"status": "very_wrong_status"},
+        },
+        {
+            "type": "update",
+            "entityType": "folder",
+            "entityId": ids[1],
+            "data": {"name": "test_folder2_edited_again"},
+        },
+    ]
+
+    result = api.post(
+        f"/projects/{PROJECT_NAME}/operations",
+        operations=operations,
+        canFail=True,
+    )
+
+    assert result
+
 
     # Delete product and versions:
 
@@ -259,6 +286,11 @@ def test_operations(api):
     for id in ids:
         response = api.get(f"/projects/{PROJECT_NAME}/folders/{id}")
         assert not response
+
+
+
+
+
 
 
 def test_hierarchical_attributes(api):
