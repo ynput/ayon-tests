@@ -11,7 +11,7 @@ class RestResponse:
         self.status = _status_code
         self.data = data
         # We should never get server error
-        assert self.status < 500, data.get("detail", "Internal server error")
+        assert self.status < 500, str(data)
 
     @property
     def detail(self) -> str:
