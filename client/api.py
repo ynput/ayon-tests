@@ -25,20 +25,29 @@ def get_ayon_headers() -> Dict[str, str]:
 class API:
     """OpenPype API client"""
 
-    def __init__(self, server_url: str, access_token: str, debug: bool = False):
+    def __init__(
+        self,
+        server_url: str,
+        access_token: str | None = None,
+        api_key: str | None = None,
+        debug: bool = False,
+    ):
         self.server_url = server_url.rstrip("/")
+
         self.access_token = access_token
+        self.api_key = api_key
         self.debug = debug
+
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_token}",
-            }
-        )
+        self.session.headers.update({"Content-Type": "application/json"})
+
+        if self.access_token:
+            self.session.headers["Authorization"] = f"Bearer {self.access_token}"
+        elif api_key:
+            self.session.headers["X-API-KEY"] = api_key
 
     def __bool__(self):
-        return not not self.access_token
+        return not not self.access_token or self.api_key
 
     @classmethod
     def login(
