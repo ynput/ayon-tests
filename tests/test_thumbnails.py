@@ -1,10 +1,16 @@
+import base64
+
 from tests.fixtures import api, PROJECT_NAME
 
 assert api
 
 
-THUMB_DATA1 = b"thisisaveryrandomthumbnailcontent"
-THUMB_DATA2 = b"thisihbhihjhuuyiooanothbnlcontent"
+thumb1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="  # noqa
+thumb2 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+L+U4T8ABu8CpCYJ1DQAAAAASUVORK5CYII="  # noqa
+
+
+THUMB_DATA1 = base64.b64decode(thumb1)
+THUMB_DATA2 = base64.b64decode(thumb2)
 
 
 def test_folder_thumbnail(api):
