@@ -1,3 +1,4 @@
+import base64
 import time
 import pytest
 
@@ -10,6 +11,8 @@ ROLE_NAME1 = "test_artist_role1"
 ROLE_NAME2 = "test_artist_role2"
 ROLE_NAME3 = "test_artist_role3"
 
+
+THUMBNAIL_DATA = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")  # noqa
 
 def create_entity(api, entity_type: str, **kwargs):
     response = api.post(f"projects/{PROJECT_NAME}/{entity_type}s", **kwargs)
@@ -351,13 +354,13 @@ def test_publishing(admin):
     assert api.raw_post(
         f"projects/{PROJECT_NAME}/folders/{f1_id}/thumbnail",
         mime="image/png",
-        data=b"123132456134564874654321",
+        data=THUMBNAIL_DATA,
     )
 
     assert not api.raw_post(
         f"projects/{PROJECT_NAME}/folders/{f2_id}/thumbnail",
         mime="image/png",
-        data=b"12313245646484684684684684",
+        data=THUMBNAIL_DATA,
     )
 
     # they should even create a blind thumbnail
@@ -365,7 +368,7 @@ def test_publishing(admin):
     response = api.raw_post(
         f"projects/{PROJECT_NAME}/thumbnails",
         mime="image/png",
-        data=b"12313245646484684684684684",
+        data=THUMBNAIL_DATA,
     )
     assert response
 

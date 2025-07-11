@@ -5,7 +5,7 @@ import codenamize
 import uuid
 
 from typing import Any, Dict
-from nxtools import logging
+import logging
 
 from .responses import RestResponse, GraphQLResponse
 
@@ -60,6 +60,7 @@ class API:
         response = requests.post(
             server_url + "/api/auth/login", json={"name": name, "password": password}
         )
+        response.raise_for_status()
         data = response.json()
         return cls(server_url, data.get("token", ""))
 
@@ -109,7 +110,7 @@ class API:
                         response.data = data
         if self.debug:
             if response:
-                logging.goodnews(response)
+                logging.info(response)
             else:
                 logging.error(response)
         return response

@@ -26,11 +26,12 @@ def test_user_password(admin):
     response = admin.patch(f"/users/{USERNAME}/password", password=PASSWORD)
     assert response
 
-    usr = API.login(USERNAME, PASSWORD + "wrong")
-    assert not usr
+    try:
+        usr = API.login(USERNAME, PASSWORD + "wrong")
+    except Exception as e:
+        usr = None
 
-    response = usr.get("/users/me")
-    assert not response
+    assert not usr
 
     usr = API.login(USERNAME, PASSWORD)
     assert usr

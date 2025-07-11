@@ -57,6 +57,10 @@ def test_hero(api):
         version=-2,
     )
 
+    # print ("RESPONSE", response.data)
+    # import time
+    # time.sleep(3600)
+
     assert not response
 
     # delete the first version
