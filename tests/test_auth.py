@@ -42,6 +42,9 @@ def test_user_password(admin):
 
     usr.logout()
 
+    response = usr.get("/users/me")
+    assert not response
+
 
     response = admin.patch(f"/users/{USERNAME}", data={"isService": True})
     assert response

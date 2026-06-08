@@ -82,7 +82,7 @@ def test_operations(api):
     assert result.data["success"]
 
     ids = [x["entityId"] for x in result.data["operations"]]
-    p(result.data)
+    #p(result.data)
 
     assert len(ids) == len(operations)
 
@@ -302,6 +302,31 @@ def test_operations(api):
     for id in ids:
         response = api.get(f"/projects/{PROJECT_NAME}/folders/{id}")
         assert not response
+
+
+def test_background_operations(api):
+
+    entity_id = create_uuid()
+    operations = [
+        {
+            "type": "create",
+            "entityType": "folder",
+            "entityId": entity_id,
+            "data": {"name": "test_folder1"},
+        }
+    ]
+    result = api.post(
+        f"/projects/{PROJECT_NAME}/operations/background",
+        operations=operations,
+        canFail=False,
+    )
+    assert result
+    ops_id = result.data["id"]
+    time.sleep(.5)
+    status = api.get(f"/projects/{PROJECT_NAME}/operations/background/{ops_id}")
+    assert status
+    p(status.data)
+
 
 
 def test_hierarchical_attributes(api):
